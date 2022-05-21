@@ -11,6 +11,10 @@ categories = ["cli"]
 readme = "Readme.md"
 license = "MIT"
 
+[features]
+rand = [ "dep:rand", "dep:rand_chacha" ]
+rayon = [ "dep:rayon", "dep:num_cpus" ]
+
 [dependencies]
 chrono = "0.4"
 color-eyre = { version = "0.6", features = [ "issue-url" ] }
@@ -32,6 +36,13 @@ tracing-futures = "0.2"
 tracing-subscriber = { version = "0.3", features = [ "env-filter", "json" ] }
 users = "0.11"
 
+# Optional dependencies
+rand = { version = "0.8.5", optional = true }
+rand_chacha = { version = "0.3.1", optional = true }
+rayon = { version = "1.5.3", optional = true }
+num_cpus = { version = "1.13.1", optional = true }
+
+# TODO: Do we need this?
 time = { version = "0.3.5", features = [ "formatting", "parsing" ] }
 
 [dev-dependencies]

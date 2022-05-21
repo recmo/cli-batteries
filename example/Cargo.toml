@@ -6,10 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cli-batteries = { path = ".." }
+cli-batteries = { path = "..", features = [ "rand", "rayon" ] }
 tokio = { version = "1.17", features = [ "fs" ] }
 structopt = "0.3"
-
 
 [build-dependencies]
 cli-batteries = { path = ".." }

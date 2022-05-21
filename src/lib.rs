@@ -3,6 +3,8 @@
 
 mod build;
 mod logging;
+mod rand;
+mod rayon;
 mod shutdown;
 mod tokio_console;
 mod version;
@@ -19,6 +21,14 @@ use tracing::{error, info};
 struct Options<O: StructOpt + StructOptInternal> {
     #[structopt(flatten)]
     log: logging::Options,
+
+    #[cfg(feature = "rand")]
+    #[structopt(flatten)]
+    rand: rand::Options,
+
+    #[cfg(feature = "rayon")]
+    #[structopt(flatten)]
+    rayon: rayon::Options,
 
     #[structopt(flatten)]
     app: O,
@@ -64,7 +74,11 @@ where
     let load_addr = &app as *const _ as usize;
     options.log.init(&version, load_addr)?;
 
-    // TODO: Initialize `rand` and `rayon`.
+    #[cfg(feature = "rand")]
+    options.rand.init();
+
+    #[cfg(feature = "rayon")]
+    options.rayon.init()?;
 
     // Launch Tokio runtime
     runtime::Builder::new_multi_thread()
