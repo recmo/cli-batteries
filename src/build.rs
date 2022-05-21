@@ -7,7 +7,7 @@ use std::{
 };
 use time::{format_description::well_known::Rfc3339, OffsetDateTime, UtcOffset};
 
-fn main() -> Result<()> {
+pub fn build_rs() -> Result<()> {
     let commit = rerun_if_git_changes().unwrap_or_else(|e| {
         eprintln!("Warning: {}", e);
         None

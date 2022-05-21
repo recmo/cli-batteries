@@ -7,6 +7,55 @@
 [![codecov](https://codecov.io/gh/recmo/yul/branch/main/graph/badge.svg?token=WBPZ9U4TTO)](https://codecov.io/gh/recmo/yul)
 [![CI](https://github.com/recmo/yul/actions/workflows/ci.yml/badge.svg)](https://github.com/recmo/yul/actions/workflows/ci.yml)
 
+Opinionated batteries-included command line interface.
+
+```rust
+use cli_batteries::StructOpt;
+use std::{path::PathBuf, io::Result};
+use tokio::fs::File;
+
+#[derive(StructOpt)]
+struct Options {
+    /// File to read
+    #[structopt(long, env, default_value = "Readme.md")]
+    file: PathBuf,
+}
+
+async fn app(options: Options) -> Result<()> {
+    let mut file = File::open(options.file).await?;
+    Ok(())
+}
+
+fn main() {
+    cli_batteries::run("my_app v0.1.0", app);
+}
+```
+
+## Generate build info
+
+```rust,ignore
+// build.rs
+fn main() {
+    cli_batteries::build_rs();
+}
+```
+
+```rust,ignore
+// main.rs
+fn main() {
+    cli_batteries::run(version!(), app);
+}
+```
+
+
+
+## Features
+
+* `rand`: Log and configure random seeds.
+* `rayon`: Log and configure number of threads.
+* `prometheus`: Start a Prometheus metrics server.
+* `tokio_console`: Start a Tokio console server.
+
 ## Building and testing
 
 Format, lint, build and test everything (I recommend creating a shell alias for this):

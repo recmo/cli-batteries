@@ -1,6 +1,7 @@
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
 
 use super::tokio_console;
+use crate::Version;
 use core::str::FromStr;
 use eyre::{bail, Error as EyreError, Result as EyreResult, WrapErr as _};
 use std::{process::id as pid, thread::available_parallelism};
@@ -69,7 +70,7 @@ pub struct Options {
 
 impl Options {
     #[allow(clippy::borrow_as_ptr)] // ptr::addr_of! does not work here.
-    pub fn init(&self) -> EyreResult<()> {
+    pub fn init(&self, version: &Version, load_addr: usize) -> EyreResult<()> {
         // Log filtering is a combination of `--log-filter` and `--verbose` arguments.
         let verbosity = {
             let (all, app) = match self.verbose {
@@ -81,8 +82,8 @@ impl Options {
             };
             Targets::new()
                 .with_default(all)
-                .with_target(env!("CARGO_PKG_NAME").replace('-', "_"), app)
-                .with_target(env!("CARGO_CRATE_NAME").replace('-', "_"), app)
+                .with_target(version.pkg_name.replace('-', "_"), app)
+                .with_target(version.crate_name.replace('-', "_"), app)
         };
         let log_filter = if self.log_filter.is_empty() {
             Targets::new()
@@ -106,16 +107,16 @@ impl Options {
 
         // Log version information
         info!(
-            host = env!("TARGET"),
+            host = version.target,
             pid = pid(),
             uid = get_current_uid(),
             gid = get_current_gid(),
             cores = available_parallelism()?,
-            main = &crate::cli::main as *const _ as usize,
-            commit = &env!("COMMIT_SHA")[..8],
+            main = load_addr,
+            commit = &version.commit_hash[..8],
             "{name} {version}",
-            name = env!("CARGO_CRATE_NAME"),
-            version = env!("CARGO_PKG_VERSION"),
+            name = version.crate_name,
+            version = version.pkg_version,
         );
 
         Ok(())
