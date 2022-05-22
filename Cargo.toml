@@ -6,8 +6,8 @@ version = "0.1.1"
 edition = "2021"
 homepage = "https://github.com/recmo/cli-batteries"
 repository = "https://github.com/recmo/cli-batteries"
-keywords = ["cli"]
-categories = ["cli"]
+keywords = ["logging", "cli"]
+categories = ["command-line-interface"]
 readme = "Readme.md"
 license = "MIT"
 
