@@ -27,10 +27,9 @@ fn main() {
 }
 ```
 
-Then in your `src/main.rs` you define app specific command line arguments using [`StructOpt`] and run the app as follows
+Then in your `src/main.rs` you define app specific command line arguments using [`StructOpt`][structopt] and run the app as follows
 
 ```rust,ignore
-// src/main.rs
 use cli_batteries::{version, StructOpt};
 use std::{path::PathBuf, io::Result};
 use tokio::fs::File;
@@ -52,7 +51,7 @@ fn main() {
 }
 ```
 
-You can see this working in the [example project](example).
+You can see this working in the [example project](./example).
 
 ## Features
 

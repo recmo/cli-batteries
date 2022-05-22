@@ -1,9 +1,3 @@
-use crate::{logging, shutdown};
-use eyre::{Error, Result as EyreResult, WrapErr as _};
-use structopt::StructOpt;
-use tokio::{runtime, sync::broadcast};
-use tracing::debug;
-
 #[derive(Clone, Copy, Debug)]
 pub struct Version {
     pub pkg_name:     &'static str,
@@ -14,7 +8,6 @@ pub struct Version {
     pub target:       &'static str,
 }
 
-#[cfg(not(doctest))]
 #[macro_export]
 macro_rules! version {
     () => {
@@ -41,20 +34,6 @@ macro_rules! version {
                 "\n",
                 env!("CARGO_PKG_DESCRIPTION"),
             ),
-        }
-    };
-}
-
-#[cfg(doctest)]
-macro_rules! version {
-    () => {
-        $crate::Version {
-            pkg_name:     env!("CARGO_PKG_NAME"),
-            pkg_version:  env!("CARGO_PKG_VERSION"),
-            crate_name:   env!("CARGO_CRATE_NAME"),
-            commit_hash:  "COMMIT_SHA",
-            target:       "TARGET",
-            long_version: "",
         }
     };
 }

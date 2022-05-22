@@ -14,7 +14,6 @@ use prometheus::{
 };
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use structopt::StructOpt;
-use tokio::sync::broadcast;
 use tracing::{error, info, trace};
 use url::{Host, Url};
 

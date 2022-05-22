@@ -11,8 +11,8 @@ mod tokio_console;
 mod version;
 
 pub use crate::{build::build_rs, version::Version};
-use eyre::{Error as EyreError, Report, Result as EyreResult, WrapErr};
-use std::{error::Error, future::Future};
+use eyre::{Error as EyreError, Result as EyreResult, WrapErr};
+use std::{error::Error, future::Future, ptr::addr_of};
 use structopt::StructOptInternal;
 pub use structopt::{self, StructOpt};
 use tokio::runtime;
@@ -76,7 +76,7 @@ where
     let options = Options::<O>::from_clap(&matches);
 
     // Start log system
-    let load_addr = &app as *const _ as usize;
+    let load_addr = addr_of!(app) as usize;
     options.log.init(&version, load_addr)?;
 
     #[cfg(feature = "rand")]
@@ -104,6 +104,9 @@ where
             // Initiate shutdown if main returns
             shutdown::shutdown();
 
+            // Wait for prometheus to finish
+            prometheus.await??;
+
             Result::<(), EyreError>::Ok(())
         })?;
 
@@ -114,7 +117,6 @@ where
 
 #[cfg(test)]
 pub mod test {
-    use super::*;
     use tracing::{error, info, warn};
     use tracing_test::traced_test;
 

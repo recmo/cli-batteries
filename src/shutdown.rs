@@ -1,10 +1,6 @@
 use eyre::Result as EyreResult;
 use once_cell::sync::Lazy;
-use std::{future::Future, sync::atomic::Ordering};
-use tokio::{
-    spawn,
-    sync::watch::{self, Receiver, Sender},
-};
+use tokio::sync::watch::{self, Receiver, Sender};
 use tracing::{error, info};
 
 #[cfg(unix)]
@@ -36,6 +32,7 @@ pub fn is_shutting_down() -> bool {
 }
 
 /// Create a (cancellable) future that waits for a signal to shutdown the app.
+#[allow(clippy::module_name_repetitions)]
 pub async fn await_shutdown() {
     if is_shutting_down() {
         return;

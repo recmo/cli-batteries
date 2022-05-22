@@ -7,6 +7,17 @@ use std::{
 };
 use time::{format_description::well_known::Rfc3339, OffsetDateTime, UtcOffset};
 
+/// Set some compile-time environment variables.
+///
+/// * `TARGET`: The target triple.
+/// * `COMMIT_SHA`: The commit hash.
+/// * `COMMIT_DATE`: The commit date.
+/// * `BUILD_DATE`: The current date.
+///
+/// # Errors
+///
+/// Returns an error if something went wrong, for example `git` failed.
+#[allow(clippy::module_name_repetitions)]
 pub fn build_rs() -> Result<()> {
     let commit = rerun_if_git_changes().unwrap_or_else(|e| {
         eprintln!("Warning: {}", e);
