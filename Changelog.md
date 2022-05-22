@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## Changed
+
+* Exposed missing shutdown handling functions.
+* Fixed incorrect issue url.
+
 ## [0.1.0] — 2022-05-21
 
 Collected various common pieces of code for the v0.1.0 release.

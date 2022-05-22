@@ -10,13 +10,14 @@ mod shutdown;
 mod tokio_console;
 mod version;
 
+use eyre::Report;
 pub use crate::{
     build::build_rs,
     shutdown::{await_shutdown, is_shutting_down, shutdown},
     version::Version,
 };
 use eyre::{Error as EyreError, Result as EyreResult, WrapErr};
-use std::{error::Error, future::Future, ptr::addr_of};
+use std::{ future::Future, ptr::addr_of};
 use structopt::StructOptInternal;
 pub use structopt::{self, StructOpt};
 use tokio::runtime;
@@ -49,7 +50,7 @@ where
     A: FnOnce(O) -> F,
     O: StructOpt + StructOptInternal,
     F: Future<Output = Result<(), E>>,
-    E: Error + Send + Sync + 'static,
+    E: Into<Report> + Send + Sync + 'static,
 {
     if let Err(report) = run_fallible(version, app) {
         error!(?report, "{}", report);
@@ -63,13 +64,13 @@ where
     A: FnOnce(O) -> F,
     O: StructOpt + StructOptInternal,
     F: Future<Output = Result<(), E>>,
-    E: Error + Send + Sync + 'static,
+    E: Into<Report> + Send + Sync + 'static,
 {
     // Install panic handler
     // TODO: write panics to log, like Err results.
     color_eyre::config::HookBuilder::default()
-        .issue_url(concat!(env!("CARGO_PKG_REPOSITORY"), "/issues/new"))
-        .add_issue_metadata("version", version.long_version)
+        .issue_url(format!("{}/issues/new", version.pkg_repo))
+        .add_issue_metadata("version", format!("{} {}",version.pkg_name,  version.long_version))
         .install()?;
 
     // Parse CLI and handle help and version (which will stop the application).
@@ -104,7 +105,7 @@ where
             let prometheus = tokio::spawn(prometheus::main(options.prometheus));
 
             // Start main
-            app(options.app).await?;
+            app(options.app).await.map_err(E::into)?;
 
             // Initiate shutdown if main returns
             shutdown::shutdown();

@@ -2,6 +2,7 @@
 pub struct Version {
     pub pkg_name:     &'static str,
     pub pkg_version:  &'static str,
+    pub pkg_repo:     &'static str,
     pub crate_name:   &'static str,
     pub commit_hash:  &'static str,
     pub long_version: &'static str,
@@ -14,6 +15,7 @@ macro_rules! version {
         $crate::Version {
             pkg_name:     env!("CARGO_PKG_NAME"),
             pkg_version:  env!("CARGO_PKG_VERSION"),
+            pkg_repo:     env!("CARGO_PKG_REPOSITORY"),
             crate_name:   env!("CARGO_CRATE_NAME"),
             commit_hash:  env!("COMMIT_SHA"),
             target:       env!("TARGET"),

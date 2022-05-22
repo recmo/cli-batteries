@@ -74,10 +74,11 @@ impl Options {
         // Log filtering is a combination of `--log-filter` and `--verbose` arguments.
         let verbosity = {
             let (all, app) = match self.verbose {
-                0 => (Level::INFO, Level::INFO),
-                1 => (Level::INFO, Level::DEBUG),
-                2 => (Level::INFO, Level::TRACE),
-                3 => (Level::DEBUG, Level::TRACE),
+                0 => (Level::ERROR, Level::INFO),
+                1 => (Level::INFO, Level::INFO),
+                2 => (Level::INFO, Level::DEBUG),
+                3 => (Level::INFO, Level::TRACE),
+                4 => (Level::DEBUG, Level::TRACE),
                 _ => (Level::TRACE, Level::TRACE),
             };
             Targets::new()
