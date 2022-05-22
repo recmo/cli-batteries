@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] — 2022-05-22
+
 ## Changed
 
 * Exposed missing shutdown handling functions.
@@ -21,5 +23,6 @@ Collected various common pieces of code for the v0.1.0 release.
 
 <!-- links to version -->
 
-[unreleased]: https://github.com/recmo/cli-batteries/compare/v0.1.0...HEAD
+[unreleased]: https://github.com/recmo/cli-batteries/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/recmo/cli-batteries/releases/tag/v0.1.1
 [0.1.0]: https://github.com/recmo/cli-batteries/releases/tag/v0.1.0
