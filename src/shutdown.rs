@@ -11,6 +11,33 @@ use tokio::signal::ctrl_c;
 
 static NOTIFY: Lazy<(Sender<bool>, Receiver<bool>)> = Lazy::new(|| watch::channel(false));
 
+/// Send the signal to shutdown the program.
+#[allow(clippy::missing_panics_doc)]
+pub fn shutdown() {
+    // Does not fail because the channel never closes.
+    NOTIFY.0.send(true).unwrap();
+}
+
+/// Are we currently shutting down?
+#[must_use]
+pub fn is_shutting_down() -> bool {
+    *NOTIFY.1.borrow()
+}
+
+/// Wait for the program to shutdown.
+///
+/// Resolves immediately if the program is already shutting down.
+/// The resulting future is safe to cancel by dropping.
+#[allow(clippy::module_name_repetitions)]
+#[allow(clippy::missing_panics_doc)]
+pub async fn await_shutdown() {
+    if is_shutting_down() {
+        return;
+    }
+    // Does not fail because the channel never closes.
+    NOTIFY.1.clone().changed().await.unwrap();
+}
+
 pub fn watch_signals() {
     tokio::spawn({
         async move {
@@ -21,23 +48,6 @@ pub fn watch_signals() {
             shutdown();
         }
     });
-}
-
-pub fn shutdown() {
-    NOTIFY.0.send(true).unwrap();
-}
-
-pub fn is_shutting_down() -> bool {
-    *NOTIFY.1.borrow()
-}
-
-/// Create a (cancellable) future that waits for a signal to shutdown the app.
-#[allow(clippy::module_name_repetitions)]
-pub async fn await_shutdown() {
-    if is_shutting_down() {
-        return;
-    }
-    NOTIFY.1.clone().changed().await.unwrap();
 }
 
 #[cfg(unix)]

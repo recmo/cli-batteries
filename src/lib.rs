@@ -10,7 +10,11 @@ mod shutdown;
 mod tokio_console;
 mod version;
 
-pub use crate::{build::build_rs, version::Version};
+pub use crate::{
+    build::build_rs,
+    shutdown::{await_shutdown, is_shutting_down, shutdown},
+    version::Version,
+};
 use eyre::{Error as EyreError, Result as EyreResult, WrapErr};
 use std::{error::Error, future::Future, ptr::addr_of};
 use structopt::StructOptInternal;
@@ -39,6 +43,7 @@ struct Options<O: StructOpt + StructOptInternal> {
     app: O,
 }
 
+/// Run the program.
 pub fn run<A, O, F, E>(version: Version, app: A)
 where
     A: FnOnce(O) -> F,
