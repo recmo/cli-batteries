@@ -105,6 +105,7 @@ where
             shutdown::shutdown();
 
             // Wait for prometheus to finish
+            #[cfg(feature = "prometheus")]
             prometheus.await??;
 
             Result::<(), EyreError>::Ok(())
