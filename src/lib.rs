@@ -10,14 +10,13 @@ mod shutdown;
 mod tokio_console;
 mod version;
 
-use eyre::Report;
 pub use crate::{
     build::build_rs,
     shutdown::{await_shutdown, is_shutting_down, shutdown},
     version::Version,
 };
-use eyre::{Error as EyreError, Result as EyreResult, WrapErr};
-use std::{ future::Future, ptr::addr_of};
+use eyre::{Error as EyreError, Report, Result as EyreResult, WrapErr};
+use std::{future::Future, ptr::addr_of};
 use structopt::StructOptInternal;
 pub use structopt::{self, StructOpt};
 use tokio::runtime;
@@ -70,7 +69,10 @@ where
     // TODO: write panics to log, like Err results.
     color_eyre::config::HookBuilder::default()
         .issue_url(format!("{}/issues/new", version.pkg_repo))
-        .add_issue_metadata("version", format!("{} {}",version.pkg_name,  version.long_version))
+        .add_issue_metadata(
+            "version",
+            format!("{} {}", version.pkg_name, version.long_version),
+        )
         .install()?;
 
     // Parse CLI and handle help and version (which will stop the application).
