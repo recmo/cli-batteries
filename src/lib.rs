@@ -3,6 +3,7 @@
 
 mod build;
 mod logging;
+mod prometheus;
 mod rand;
 mod rayon;
 mod shutdown;
@@ -29,6 +30,10 @@ struct Options<O: StructOpt + StructOptInternal> {
     #[cfg(feature = "rayon")]
     #[structopt(flatten)]
     rayon: rayon::Options,
+
+    #[cfg(feature = "prometheus")]
+    #[structopt(flatten)]
+    prometheus: prometheus::Options,
 
     #[structopt(flatten)]
     app: O,
@@ -88,6 +93,10 @@ where
         .block_on(async {
             // Monitor for Ctrl-C
             shutdown::watch_signals();
+
+            // Start prometheus
+            #[cfg(feature = "prometheus")]
+            let prometheus = tokio::spawn(prometheus::main(options.prometheus));
 
             // Start main
             app(options.app).await?;

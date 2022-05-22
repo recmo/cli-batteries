@@ -1,16 +1,37 @@
 # CLI Batteries
 
-[![crates.io](https://buildstats.info/crate/yul)](https://crates.io/crates/yul)
-[![docs.rs](https://img.shields.io/docsrs/yul)](https://docs.rs/yul)
-[![MIT License](https://img.shields.io/github/license/recmo/yul)](https://github.com/recmo/yul/blob/main/mit-license.md)
-[![dependency status](https://deps.rs/repo/github/recmo/yul/status.svg)](https://deps.rs/repo/github/recmo/yul)
-[![codecov](https://codecov.io/gh/recmo/yul/branch/main/graph/badge.svg?token=WBPZ9U4TTO)](https://codecov.io/gh/recmo/yul)
-[![CI](https://github.com/recmo/yul/actions/workflows/ci.yml/badge.svg)](https://github.com/recmo/yul/actions/workflows/ci.yml)
+[![crates.io](https://buildstats.info/crate/cli-batteries)](https://crates.io/crates/cli-batteries)
+[![docs.rs](https://img.shields.io/docsrs/cli-batteries)](https://docs.rs/cli-batteries)
+[![MIT License](https://img.shields.io/github/license/recmo/cli-batteries)](https://github.com/recmo/cli-batteries/blob/main/mit-license.md)
+[![dependency status](https://deps.rs/repo/github/recmo/cli-batteries/status.svg)](https://deps.rs/repo/github/recmo/cli-batteries)
+[![codecov](https://codecov.io/gh/recmo/cli-batteries/branch/main/graph/badge.svg?token=WBPZ9U4TTO)](https://codecov.io/gh/recmo/cli-batteries)
+[![CI](https://github.com/recmo/cli-batteries/actions/workflows/ci.yml/badge.svg)](https://github.com/recmo/cli-batteries/actions/workflows/ci.yml)
 
-Opinionated batteries-included command line interface.
+Opinionated batteries-included command line interface runtime utilities.
 
-```rust
-use cli_batteries::StructOpt;
+To use it, add it to your `Cargo.toml`
+
+```toml
+[dependencies]
+cli-batteries = "0.1"
+
+[build-dependencies]
+cli-batteries = "0.1"
+```
+
+and call the [`build_rs`] function in your `build.rs`
+
+```rust,ignore
+fn main() {
+    cli_batteries::build_rs()
+}
+```
+
+Then in your `src/main.rs` you define app specific command line arguments using [`StructOpt`] and run the app as follows
+
+```rust,ignore
+// src/main.rs
+use cli_batteries::{version, StructOpt};
 use std::{path::PathBuf, io::Result};
 use tokio::fs::File;
 
@@ -27,27 +48,11 @@ async fn app(options: Options) -> Result<()> {
 }
 
 fn main() {
-    cli_batteries::run("my_app v0.1.0", app);
-}
-```
-
-## Generate build info
-
-```rust,ignore
-// build.rs
-fn main() {
-    cli_batteries::build_rs();
-}
-```
-
-```rust,ignore
-// main.rs
-fn main() {
     cli_batteries::run(version!(), app);
 }
 ```
 
-
+You can see this working in the [example project](example).
 
 ## Features
 
@@ -68,12 +73,6 @@ cargo test --workspace --all-features --all-targets -- --nocapture &&\
 cargo doc --workspace --all-features --no-deps
 ```
 
-Run benchmarks with the provided `.cargo/config.toml` alias
-
-```sh
-cargo criterion
-```
-
 Check documentation coverage
 
 ```sh
@@ -88,9 +87,9 @@ Maybe:
 
 ---
 
-[![lines of code](https://img.shields.io/tokei/lines/github/recmo/yul)](https://github.com/recmo/yul)
-[![GitHub contributors](https://img.shields.io/github/contributors/recmo/yul)](https://github.com/recmo/yul/graphs/contributors)
-[![GitHub issues](https://img.shields.io/github/issues/recmo/yul)](https://github.com/recmo/yul/issues)
-[![GitHub pull requests](https://img.shields.io/github/issues-pr/recmo/yul?label=PRs)](https://github.com/recmo/yul/pulls)
-[![GitHub Repo stars](https://img.shields.io/github/stars/recmo/yul)](https://star-history.com/#recmo/yul&Date)
-[![crates.io](https://img.shields.io/crates/d/yul)](https://crates.io/crates/yul)
+[![lines of code](https://img.shields.io/tokei/lines/github/recmo/cli-batteries)](https://github.com/recmo/cli-batteries)
+[![GitHub contributors](https://img.shields.io/github/contributors/recmo/cli-batteries)](https://github.com/recmo/cli-batteries/graphs/contributors)
+[![GitHub issues](https://img.shields.io/github/issues/recmo/cli-batteries)](https://github.com/recmo/cli-batteries/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/recmo/cli-batteries?label=PRs)](https://github.com/recmo/cli-batteries/pulls)
+[![GitHub Repo stars](https://img.shields.io/github/stars/recmo/cli-batteries)](https://star-history.com/#recmo/cli-batteries&Date)
+[![crates.io](https://img.shields.io/crates/d/cli-batteries)](https://crates.io/crates/cli-batteries)

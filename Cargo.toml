@@ -14,6 +14,7 @@ license = "MIT"
 [features]
 rand = [ "dep:rand", "dep:rand_chacha" ]
 rayon = [ "dep:rayon", "dep:num_cpus" ]
+prometheus = [ "dep:prometheus", "dep:hyper", "dep:url" ]
 
 [dependencies]
 chrono = "0.4"
@@ -36,11 +37,18 @@ tracing-futures = "0.2"
 tracing-subscriber = { version = "0.3", features = [ "env-filter", "json" ] }
 users = "0.11"
 
-# Optional dependencies
+# Rand feature
 rand = { version = "0.8.5", optional = true }
 rand_chacha = { version = "0.3.1", optional = true }
+
+# Rayon feature
 rayon = { version = "1.5.3", optional = true }
 num_cpus = { version = "1.13.1", optional = true }
+
+# Prometheus feature
+prometheus = { version = "0.13", features = [ "process" ], optional = true }
+url = { version = "2.2", optional = true }
+hyper = { version = "^0.14.17", features = [ "server", "tcp", "http1", "http2" ], optional = true }
 
 # TODO: Do we need this?
 time = { version = "0.3.5", features = [ "formatting", "parsing" ] }

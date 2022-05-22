@@ -1,7 +1,5 @@
-use ::prometheus::{
-    opts, register_counter, register_gauge, register_histogram, Counter, Encoder as _, Gauge,
-    Histogram,
-};
+#![cfg(feature = "prometheus")]
+use crate::shutdown::await_shutdown;
 use eyre::{bail, ensure, Result as EyreResult, WrapErr as _};
 use hyper::{
     body::HttpBody,
@@ -10,6 +8,10 @@ use hyper::{
     Body, Method, Request, Response, Server,
 };
 use once_cell::sync::Lazy;
+use prometheus::{
+    opts, register_counter, register_gauge, register_histogram, Counter, Encoder as _, Gauge,
+    Histogram,
+};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use structopt::StructOpt;
 use tokio::sync::broadcast;
@@ -93,7 +95,7 @@ async fn route(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
     Ok(response)
 }
 
-pub async fn main(options: Options, shutdown: broadcast::Sender<()>) -> EyreResult<()> {
+pub async fn main(options: Options) -> EyreResult<()> {
     ensure!(
         options.prometheus.scheme() == "http",
         "Only http:// is supported in {}",
@@ -118,9 +120,7 @@ pub async fn main(options: Options, shutdown: broadcast::Sender<()>) -> EyreResu
         .serve(make_service_fn(|_| async {
             Ok::<_, hyper::Error>(service_fn(route))
         }))
-        .with_graceful_shutdown(async move {
-            shutdown.subscribe().recv().await.ok();
-        });
+        .with_graceful_shutdown(await_shutdown());
     info!(url = %options.prometheus, "Metrics server listening");
 
     server.await?;
