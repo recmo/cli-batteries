@@ -74,7 +74,7 @@ jobs:
         with:
           key: cache-v1
       - name: Build and test main
-        run: cargo test --locked --test main --features $${{ matrix.features }}
+        run: cargo test --locked --test main --features ${{ matrix.features }}
 
   test:
     name: Test
