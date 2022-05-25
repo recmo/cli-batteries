@@ -50,6 +50,32 @@ jobs:
           command: doc
           args: --locked --workspace --all-features --no-deps --document-private-items
 
+  features:
+    name: Test feature sets
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        features:
+          - ""
+          - mimalloc
+          - metered_allocator
+          - mimalloc,metered_allocator
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - name: Cache build
+        uses: Swatinem/rust-cache@v1
+        with:
+          key: cache-v1
+      - name: Build and test main
+        run: cargo test --locked --test main --features $${{ matrix.features }}
+
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -71,7 +97,6 @@ jobs:
         uses: Swatinem/rust-cache@v1
         with:
           key: cache-v1
-      - run:  npm install ganache-cli@latest --global
       # Cargo doc test is not included in `--all-targets` so we call it separately.
       # See <https://github.com/rust-lang/cargo/issues/6669>
       # Cargo doc test also doesn't support `--no-run`, so we run it but
