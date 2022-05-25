@@ -9,9 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2022-05-25
+
+### Added
+
+* `mock_shutdown` function for testing.
+* `mimalloc` and `metered_allocator` features.
+* `default_from_structopt` macro.
+* Implement basic traits on options.
+
 ## [0.1.1] — 2022-05-22
 
-## Changed
+### Changed
 
 * Exposed missing shutdown handling functions.
 * Fixed incorrect issue url.
@@ -23,6 +32,7 @@ Collected various common pieces of code for the v0.1.0 release.
 
 <!-- links to version -->
 
-[unreleased]: https://github.com/recmo/cli-batteries/compare/v0.1.1...HEAD
+[unreleased]: https://github.com/recmo/cli-batteries/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/recmo/cli-batteries/releases/tag/v0.1.2
 [0.1.1]: https://github.com/recmo/cli-batteries/releases/tag/v0.1.1
 [0.1.0]: https://github.com/recmo/cli-batteries/releases/tag/v0.1.0
