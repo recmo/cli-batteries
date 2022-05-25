@@ -1,5 +1,5 @@
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
-use cli_batteries::{run, default_from_structopt, Version};
+use cli_batteries::{default_from_structopt, run, Version};
 use std::{io::Result, path::PathBuf};
 use structopt::StructOpt;
 use tokio::{fs::File, io::AsyncReadExt};
