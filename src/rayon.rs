@@ -1,15 +1,18 @@
 #![cfg(feature = "rayon")]
+use crate::default_from_structopt;
 use eyre::{Result, WrapErr};
 use rayon::ThreadPoolBuilder;
 use structopt::StructOpt;
 use tracing::info;
 
-#[derive(Debug, PartialEq, StructOpt)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, StructOpt)]
 pub struct Options {
     /// Number of compute threads to use. Defaults to number of cores.
     #[structopt(long, env)]
     threads: Option<usize>,
 }
+
+default_from_structopt!(Options);
 
 impl Options {
     pub fn init(&self) -> Result<()> {

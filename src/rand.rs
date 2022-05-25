@@ -5,7 +5,7 @@ use std::num::ParseIntError;
 use structopt::StructOpt;
 use tracing::info;
 
-#[derive(Debug, PartialEq, StructOpt)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Default, Hash, StructOpt)]
 pub struct Options {
     /// Random seed for deterministic runs.
     /// If not specified a new seed is generated from OS entropy.

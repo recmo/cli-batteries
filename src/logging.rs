@@ -1,7 +1,7 @@
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
 
 use super::tokio_console;
-use crate::Version;
+use crate::{default_from_structopt, Version};
 use core::str::FromStr;
 use eyre::{bail, Error as EyreError, Result as EyreResult, WrapErr as _};
 use std::{process::id as pid, thread::available_parallelism};
@@ -15,7 +15,7 @@ use tracing_subscriber::{
 };
 use users::{get_current_gid, get_current_uid};
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Ord, Hash, Eq)]
 enum LogFormat {
     Compact,
     Pretty,
@@ -23,7 +23,7 @@ enum LogFormat {
 }
 
 impl LogFormat {
-    fn to_layer<S>(&self) -> impl Layer<S>
+    fn into_layer<S>(self) -> impl Layer<S>
     where
         S: Subscriber + for<'a> tracing_subscriber::registry::LookupSpan<'a> + Send + Sync,
     {
@@ -50,7 +50,7 @@ impl FromStr for LogFormat {
     }
 }
 
-#[derive(Debug, PartialEq, StructOpt)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, StructOpt)]
 pub struct Options {
     /// Verbose mode (-v, -vv, -vvv, etc.)
     #[structopt(short, long, parse(from_occurrences))]
@@ -67,6 +67,8 @@ pub struct Options {
     #[structopt(flatten)]
     pub tokio_console: tokio_console::Options,
 }
+
+default_from_structopt!(Options);
 
 impl Options {
     #[allow(clippy::borrow_as_ptr)] // ptr::addr_of! does not work here.
@@ -96,12 +98,12 @@ impl Options {
         let targets = verbosity.with_targets(log_filter);
 
         // Support server for tokio-console
-        let console_layer = tokio_console::layer(&self.tokio_console);
+        let console_layer = self.tokio_console.into_layer();
 
         // Route events to both tokio-console and stdout
         let subscriber = Registry::default()
             .with(console_layer)
-            .with(self.log_format.to_layer().with_filter(targets));
+            .with(self.log_format.into_layer().with_filter(targets));
         tracing::subscriber::set_global_default(subscriber)?;
 
         //         .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
@@ -136,9 +138,7 @@ pub mod test {
             verbose:       4,
             log_filter:    "foo".to_owned(),
             log_format:    LogFormat::Pretty,
-            tokio_console: tokio_console::Options {
-                tokio_console: false,
-            },
+            tokio_console: tokio_console::Options::default(),
         });
     }
 }

@@ -12,10 +12,22 @@ use tokio::signal::ctrl_c;
 static NOTIFY: Lazy<(Sender<bool>, Receiver<bool>)> = Lazy::new(|| watch::channel(false));
 
 /// Send the signal to shutdown the program.
-#[allow(clippy::missing_panics_doc)]
+#[allow(clippy::missing_panics_doc)] // Never panics
 pub fn shutdown() {
     // Does not fail because the channel never closes.
     NOTIFY.0.send(true).unwrap();
+}
+
+/// Reset the shutdown signal so it can be triggered again.
+///
+/// This is only useful for testing. Strange things can happen to any existing
+/// `await_shutdown()` futures.
+#[cfg(feature = "mock_shutdown")]
+#[allow(clippy::missing_panics_doc)] // Never panics
+#[allow(clippy::module_name_repetitions)] // Never panics
+pub fn reset_shutdown() {
+    // Does not fail because the channel never closes.
+    NOTIFY.0.send(false).unwrap();
 }
 
 /// Are we currently shutting down?

@@ -55,10 +55,15 @@ You can see this working in the [example project](./example).
 
 ## Features
 
+* `mimalloc`: Use the [mimalloc] allocator with security hardening features enabled.
 * `rand`: Log and configure random seeds.
 * `rayon`: Log and configure number of threads.
 * `prometheus`: Start a Prometheus metrics server.
+* `metered_allocator`: Collect metric on memory allocation, enables `prometheus`.
 * `tokio_console`: Start a Tokio console server.
+
+[mimalloc]: https://github.com/microsoft/mimalloc
+
 
 ## Building and testing
 

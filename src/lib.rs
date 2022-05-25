@@ -1,8 +1,16 @@
+// TODO:
+// https://crates.io/crates/shadow-rs
+// https://crates.io/crates/argfile
+// https://docs.rs/wild/latest/wild/
+// https://crates.io/crates/clap_complete
+
 #![doc = include_str!("../Readme.md")]
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
 
+mod allocator;
 mod build;
 mod logging;
+mod metered_allocator;
 mod prometheus;
 mod rand;
 mod rayon;
@@ -22,7 +30,29 @@ pub use structopt::{self, StructOpt};
 use tokio::runtime;
 use tracing::{error, info};
 
-#[derive(StructOpt)]
+#[cfg(feature = "mock_shutdown")]
+pub use crate::shutdown::reset_shutdown;
+
+#[cfg(feature = "metered_allocator")]
+use metered_allocator::MeteredAllocator;
+
+/// Implement [`Default`] for a type that implements [`StructOpt`] and has
+/// default values set for all fields.
+#[macro_export]
+macro_rules! default_from_structopt {
+    ($ty:ty) => {
+        impl ::std::default::Default for $ty {
+            fn default() -> Self {
+                <Self as ::structopt::StructOpt>::from_iter_safe::<Option<::std::ffi::OsString>>(
+                    None,
+                )
+                .unwrap()
+            }
+        }
+    };
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default, StructOpt)]
 struct Options<O: StructOpt + StructOptInternal> {
     #[structopt(flatten)]
     log: logging::Options,
@@ -82,6 +112,9 @@ where
         .long_version(version.long_version)
         .get_matches();
     let options = Options::<O>::from_clap(&matches);
+
+    // Start allocator metering (if enabled)
+    allocator::start_metering();
 
     // Start log system
     let load_addr = addr_of!(app) as usize;
