@@ -30,7 +30,23 @@ pub use crate::shutdown::reset_shutdown;
 #[cfg(feature = "metered_allocator")]
 use metered_allocator::MeteredAllocator;
 
-#[derive(StructOpt)]
+/// Implement [`Default`] for a type that implements [`StructOpt`] and has
+/// default values set for all fields.
+#[macro_export]
+macro_rules! default_from_structopt {
+    ($ty:ty) => {
+        impl ::std::default::Default for $ty {
+            fn default() -> Self {
+                <Self as ::structopt::StructOpt>::from_iter_safe::<Option<::std::ffi::OsString>>(
+                    None,
+                )
+                .unwrap()
+            }
+        }
+    };
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default, StructOpt)]
 struct Options<O: StructOpt + StructOptInternal> {
     #[structopt(flatten)]
     log: logging::Options,

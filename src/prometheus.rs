@@ -1,5 +1,5 @@
 #![cfg(feature = "prometheus")]
-use crate::shutdown::await_shutdown;
+use crate::{default_from_structopt, shutdown::await_shutdown};
 use eyre::{bail, ensure, Result as EyreResult, WrapErr as _};
 use hyper::{
     body::HttpBody,
@@ -17,13 +17,15 @@ use structopt::StructOpt;
 use tracing::{error, info, trace};
 use url::{Host, Url};
 
-#[derive(Debug, PartialEq, StructOpt)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, StructOpt)]
 pub struct Options {
     /// Prometheus scrape endpoint
     // See <https://github.com/prometheus/prometheus/wiki/Default-port-allocations>
     #[structopt(long, env, default_value = "http://127.0.0.1:9998/metrics")]
     pub prometheus: Url,
 }
+
+default_from_structopt!(Options);
 
 static REQ_COUNTER: Lazy<Counter> = Lazy::new(|| {
     register_counter!(opts!(

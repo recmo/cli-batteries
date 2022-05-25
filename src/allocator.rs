@@ -4,7 +4,7 @@ use crate::MeteredAllocator;
 #[cfg(feature = "mimalloc")]
 pub use ::mimalloc::MiMalloc;
 
-#[cfg(not(feature = "mimalloc"))]
+#[cfg(all(not(feature = "mimalloc"), feature = "metered_allocator"))]
 use std::alloc::System;
 
 #[cfg(all(not(feature = "mimalloc"), feature = "metered_allocator"))]

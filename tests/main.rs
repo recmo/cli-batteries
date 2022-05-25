@@ -1,10 +1,8 @@
-#![doc = include_str!("../Readme.md")]
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
-
 use cli_batteries::{run, Version};
 use std::{io::Result, path::PathBuf};
 use structopt::StructOpt;
-use tokio::fs::File;
+use tokio::{fs::File, io::AsyncReadExt};
 
 const MOCK_VERSION: Version = Version {
     pkg_name:     "cli-test",
@@ -25,10 +23,12 @@ struct Options {
 
 async fn app(options: Options) -> Result<()> {
     let mut file = File::open(options.file).await?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents).await?;
     Ok(())
 }
 
 #[test]
 fn main() {
-    cli_batteries::run(MOCK_VERSION, app);
+    run(MOCK_VERSION, app);
 }
