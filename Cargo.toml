@@ -12,6 +12,9 @@ readme = "Readme.md"
 license = "MIT"
 
 [features]
+mock_shutdown = []
+metered_allocator = [ "prometheus" ]
+mimalloc = [ "deps:mimalloc" ]
 rand = [ "dep:rand", "dep:rand_chacha" ]
 rayon = [ "dep:rayon", "dep:num_cpus" ]
 prometheus = [ "dep:prometheus", "dep:hyper", "dep:url" ]

@@ -18,6 +18,16 @@ pub fn shutdown() {
     NOTIFY.0.send(true).unwrap();
 }
 
+/// Reset the shutdown signal so it can be triggered again.
+///
+/// This is only useful for testing. Strange things can happen to any existing
+/// `await_shutdown()` futures.
+#[cfg(feature = "mock_shutdown")]
+pub fn reset_shutdown() {
+    // Does not fail because the channel never closes.
+    NOTIFY.0.send(false).unwrap();
+}
+
 /// Are we currently shutting down?
 #[must_use]
 pub fn is_shutting_down() -> bool {
