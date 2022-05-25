@@ -13,6 +13,7 @@ pub struct Options {
     /// Start a tokio-console server on `http://127.0.0.1:6669/`.
     #[structopt(long)]
     pub tokio_console: bool,
+    // TODO: No options when not enabled
 }
 
 pub fn layer<S>(options: &Options) -> impl Layer<S>

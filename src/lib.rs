@@ -1,8 +1,10 @@
 #![doc = include_str!("../Readme.md")]
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
 
+mod allocator;
 mod build;
 mod logging;
+mod metered_allocator;
 mod prometheus;
 mod rand;
 mod rayon;
@@ -21,6 +23,12 @@ use structopt::StructOptInternal;
 pub use structopt::{self, StructOpt};
 use tokio::runtime;
 use tracing::{error, info};
+
+#[cfg(feature = "mock_shutdown")]
+pub use crate::shutdown::reset_shutdown;
+
+#[cfg(feature = "metered_allocator")]
+use metered_allocator::MeteredAllocator;
 
 #[derive(StructOpt)]
 struct Options<O: StructOpt + StructOptInternal> {
@@ -82,6 +90,9 @@ where
         .long_version(version.long_version)
         .get_matches();
     let options = Options::<O>::from_clap(&matches);
+
+    // Start allocator metering (if enabled)
+    allocator::start_metering();
 
     // Start log system
     let load_addr = addr_of!(app) as usize;
