@@ -1,3 +1,9 @@
+// TODO:
+// https://crates.io/crates/shadow-rs
+// https://crates.io/crates/argfile
+// https://docs.rs/wild/latest/wild/
+// https://crates.io/crates/clap_complete
+
 #![doc = include_str!("../Readme.md")]
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
 
