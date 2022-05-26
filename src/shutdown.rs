@@ -43,11 +43,12 @@ pub fn is_shutting_down() -> bool {
 #[allow(clippy::module_name_repetitions)]
 #[allow(clippy::missing_panics_doc)]
 pub async fn await_shutdown() {
-    if is_shutting_down() {
+    let mut watch = NOTIFY.1.clone();
+    if *watch.borrow_and_update() {
         return;
     }
     // Does not fail because the channel never closes.
-    NOTIFY.1.clone().changed().await.unwrap();
+    watch.changed().await.unwrap();
 }
 
 pub fn watch_signals() {
