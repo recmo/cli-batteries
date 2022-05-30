@@ -7,6 +7,7 @@ use eyre::{bail, Error as EyreError, Result as EyreResult, WrapErr as _};
 use std::{process::id as pid, thread::available_parallelism};
 use structopt::StructOpt;
 use tracing::{info, Level, Subscriber};
+use tracing_error::ErrorLayer;
 use tracing_subscriber::{
     filter::Targets,
     fmt::{self, format::FmtSpan},
@@ -103,6 +104,7 @@ impl Options {
         // Route events to both tokio-console and stdout
         let subscriber = Registry::default()
             .with(console_layer)
+            .with(ErrorLayer::default())
             .with(self.log_format.into_layer().with_filter(targets));
         tracing::subscriber::set_global_default(subscriber)?;
 

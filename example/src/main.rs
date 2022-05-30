@@ -5,14 +5,16 @@ use cli_batteries::version;
 use std::{io::Result, path::PathBuf};
 use structopt::StructOpt;
 use tokio::fs::File;
+use tracing::instrument;
 
-#[derive(StructOpt)]
+#[derive(Clone, Debug, StructOpt)]
 struct Options {
     /// File to read
     #[structopt(long, env, default_value = "Readme.md")]
     file: PathBuf,
 }
 
+#[instrument]
 async fn app(options: Options) -> Result<()> {
     let mut file = File::open(options.file).await?;
     Ok(())
