@@ -23,7 +23,7 @@ and call the [`build_rs`] function in your `build.rs`
 
 ```rust,ignore
 fn main() {
-    cli_batteries::build_rs()
+    cli_batteries::build_rs().unwrap()
 }
 ```
 
