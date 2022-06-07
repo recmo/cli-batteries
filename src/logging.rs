@@ -30,8 +30,7 @@ impl LogFormat {
     {
         let layer = fmt::Layer::new().with_span_events(FmtSpan::NEW | FmtSpan::CLOSE);
         match self {
-            Self::Compact => Box::new(layer.compact())
-                as Box<dyn Layer<S> + Send + Sync>,
+            Self::Compact => Box::new(layer.compact()) as Box<dyn Layer<S> + Send + Sync>,
             Self::Pretty => Box::new(layer.pretty()),
             Self::Json => Box::new(layer.json()),
         }
