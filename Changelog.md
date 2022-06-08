@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] — 2022-06-07
+
 ### Fixed
 
 * Bug where log-format `json` would not encode fields.
@@ -48,9 +50,10 @@ Collected various common pieces of code for the v0.1.0 release.
 
 <!-- links to version -->
 
-[unreleased]: https://github.com/recmo/cli-batteries/compare/v0.1.4...HEAD
-[0.1.4]: https://github.com/recmo/cli-batteries/releases/tag/v0.1.2
-[0.1.3]: https://github.com/recmo/cli-batteries/releases/tag/v0.1.2
+[unreleased]: https://github.com/recmo/cli-batteries/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/recmo/cli-batteries/releases/tag/v0.1.5
+[0.1.4]: https://github.com/recmo/cli-batteries/releases/tag/v0.1.4
+[0.1.3]: https://github.com/recmo/cli-batteries/releases/tag/v0.1.3
 [0.1.2]: https://github.com/recmo/cli-batteries/releases/tag/v0.1.2
 [0.1.1]: https://github.com/recmo/cli-batteries/releases/tag/v0.1.1
 [0.1.0]: https://github.com/recmo/cli-batteries/releases/tag/v0.1.0

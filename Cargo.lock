@@ -247,7 +247,7 @@ dependencies = [
 
 [[package]]
 name = "cli-batteries"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "chrono",
  "color-eyre",
