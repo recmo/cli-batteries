@@ -11,6 +11,7 @@ mod allocator;
 mod build;
 mod logging;
 mod metered_allocator;
+mod open_telemetry;
 mod prometheus;
 mod rand;
 mod rayon;

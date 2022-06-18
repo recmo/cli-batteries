@@ -37,7 +37,9 @@ tokio = { version = "1.17", features = [ "rt-multi-thread", "sync", "macros", "s
 tracing = "0.1"
 tracing-error = "0.2"
 tracing-futures = "0.2"
+tracing-opentelemetry = "0.17.3"
 tracing-subscriber = { version = "0.3", features = [ "env-filter", "json" ] }
+opentelemetry = "0.17.0"
 users = "0.11"
 
 # Mimalloc feature
