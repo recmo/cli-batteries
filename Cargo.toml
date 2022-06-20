@@ -57,7 +57,7 @@ url = { version = "2.2", optional = true }
 hyper = { version = "^0.14.17", features = [ "server", "tcp", "http1", "http2" ], optional = true }
 
 # TODO: Do we need this?
-time = { version = "0.3.5", features = [ "formatting", "parsing" ] }
+time = { version = "0.3.10", features = [ "formatting", "parsing" ] }
 
 [dev-dependencies]
 proptest = { version = "1.0" }
