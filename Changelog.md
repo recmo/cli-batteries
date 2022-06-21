@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Changed
 
 * The tracing log is now constructed inside the Tokio runtime. This is for OpenTelemetry which requires an active runtime during construction.
+* Feature names are now kebab-case for consistency.
 
 ## [0.1.5] — 2022-06-07
 

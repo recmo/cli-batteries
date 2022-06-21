@@ -12,8 +12,8 @@ readme = "Readme.md"
 license = "MIT"
 
 [features]
-mock_shutdown = []
-metered_allocator = [ "prometheus" ]
+mock-shutdown = []
+metered-allocator = [ "prometheus" ]
 tokio-console = [ "dep:console-subscriber" ]
 mimalloc = [ "dep:mimalloc" ]
 rand = [ "dep:rand", "dep:rand_chacha" ]

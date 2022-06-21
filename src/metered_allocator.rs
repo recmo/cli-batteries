@@ -1,4 +1,4 @@
-#![cfg(feature = "metered_allocator")]
+#![cfg(feature = "metered-allocator")]
 
 use core::sync::atomic::{AtomicBool, Ordering};
 use once_cell::sync::Lazy;

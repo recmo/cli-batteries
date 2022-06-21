@@ -22,7 +22,7 @@ pub fn shutdown() {
 ///
 /// This is only useful for testing. Strange things can happen to any existing
 /// `await_shutdown()` futures.
-#[cfg(feature = "mock_shutdown")]
+#[cfg(feature = "mock-shutdown")]
 #[allow(clippy::missing_panics_doc)] // Never panics
 #[allow(clippy::module_name_repetitions)] // Never panics
 pub fn reset_shutdown() {

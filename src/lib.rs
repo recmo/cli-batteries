@@ -31,10 +31,10 @@ pub use structopt::{self, StructOpt};
 use tokio::runtime;
 use tracing::{error, info};
 
-#[cfg(feature = "mock_shutdown")]
+#[cfg(feature = "mock-shutdown")]
 pub use crate::shutdown::reset_shutdown;
 
-#[cfg(feature = "metered_allocator")]
+#[cfg(feature = "metered-allocator")]
 use metered_allocator::MeteredAllocator;
 
 /// Implement [`Default`] for a type that implements [`StructOpt`] and has

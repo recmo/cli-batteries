@@ -58,8 +58,8 @@ jobs:
         features:
           - ""
           - mimalloc
-          - metered_allocator
-          - mimalloc,metered_allocator
+          - metered-allocator
+          - mimalloc,metered-allocator
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3

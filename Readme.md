@@ -59,7 +59,8 @@ You can see this working in the [example project](./example).
 * `rand`: Log and configure random seeds.
 * `rayon`: Log and configure number of threads.
 * `prometheus`: Start a Prometheus metrics server.
-* `metered_allocator`: Collect metric on memory allocation, enables `prometheus`.
+* `metered-allocator`: Collect metric on memory allocation, enables `prometheus`.
+* `mock-shutdown`: Enable the `reset_shutdown` function that allows re-arming shutdown for testing.
 * `tokio-console`: Enable the `--tokio-console` option to start a Tokio console server on `http://127.0.0.1:6669/` for async inspection.
 * `otlp`: Enable the `--trace-otlp` option to push traces to an OpenTelementry collector.
 * `datadog`: Enable the `--trace-datadog` option to push traces to a DataDog v5 agent.
