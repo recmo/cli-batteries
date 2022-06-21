@@ -18,6 +18,9 @@ mimalloc = [ "dep:mimalloc" ]
 rand = [ "dep:rand", "dep:rand_chacha" ]
 rayon = [ "dep:rayon", "dep:num_cpus" ]
 prometheus = [ "dep:prometheus", "dep:hyper", "dep:url" ]
+opentelemetry = [ "dep:url", "dep:tracing-opentelemetry", "dep:opentelemetry" ]
+otlp = [ "opentelemetry", "dep:opentelemetry-otlp" ]
+datadog = [ "opentelemetry", "dep:opentelemetry-datadog" ]
 
 [dependencies]
 chrono = "0.4"
@@ -37,10 +40,11 @@ tokio = { version = "1.17", features = [ "rt-multi-thread", "sync", "macros", "s
 tracing = "0.1"
 tracing-error = "0.2"
 tracing-futures = "0.2"
-tracing-opentelemetry = "0.17.3"
 tracing-subscriber = { version = "0.3", features = [ "env-filter", "json" ] }
-opentelemetry = "0.17.0"
 users = "0.11"
+
+# Optional dependencies
+url = { version = "2.2", optional = true }
 
 # Mimalloc feature
 mimalloc = { version = "0.1", optional = true }
@@ -55,8 +59,13 @@ num_cpus = { version = "1.13.1", optional = true }
 
 # Prometheus feature
 prometheus = { version = "0.13", features = [ "process" ], optional = true }
-url = { version = "2.2", optional = true }
 hyper = { version = "^0.14.17", features = [ "server", "tcp", "http1", "http2" ], optional = true }
+
+# OpenTelemetry
+tracing-opentelemetry = { version = "0.17", optional = true }
+opentelemetry = { version = "0.17", features = ["rt-tokio"], optional = true }
+opentelemetry-otlp = { version = "0.10", optional = true }
+opentelemetry-datadog = { version = "0.5", features = ["reqwest-client"], optional = true }
 
 # TODO: Do we need this?
 time = { version = "0.3.5", features = [ "formatting", "parsing" ] }

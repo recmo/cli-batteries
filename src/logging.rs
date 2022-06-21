@@ -1,6 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
 
-use super::{open_telemetry, tokio_console};
+use super::tokio_console;
 use crate::{default_from_structopt, Version};
 use core::str::FromStr;
 use eyre::{bail, Error as EyreError, Result as EyreResult, WrapErr as _};
@@ -15,6 +15,9 @@ use tracing_subscriber::{
     Layer, Registry,
 };
 use users::{get_current_gid, get_current_uid};
+
+#[cfg(feature = "opentelemetry")]
+use crate::open_telemetry;
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Ord, Hash, Eq)]
 enum LogFormat {
@@ -67,8 +70,9 @@ pub struct Options {
     #[structopt(flatten)]
     pub tokio_console: tokio_console::Options,
 
+    #[cfg(feature = "opentelemetry")]
     #[structopt(flatten)]
-    pub open_telemetry: open_telemetry::Options,
+    open_telemetry: open_telemetry::Options,
 }
 
 default_from_structopt!(Options);
@@ -100,16 +104,16 @@ impl Options {
         };
         let targets = verbosity.with_targets(log_filter);
 
-        // Support server for tokio-console
-        let console_layer = self.tokio_console.into_layer();
-
-        // Create a tracing layer with the configured tracer
-        let telemetry_layer = self.open_telemetry.into_layer()?;
-
         // Route events to both tokio-console and stdout
-        let subscriber = Registry::default()
-            .with(console_layer)
-            .with(telemetry_layer)
+        let subscriber = Registry::default();
+
+        #[cfg(feature = "tokio-console")]
+        let subscriber = subscriber.with(self.tokio_console.into_layer());
+
+        #[cfg(feature = "opentelemetry")]
+        let subscriber = subscriber.with(self.open_telemetry.into_layer()?);
+
+        let subscriber = subscriber
             .with(ErrorLayer::default())
             .with(self.log_format.into_layer().with_filter(targets));
         tracing::subscriber::set_global_default(subscriber)?;

@@ -117,15 +117,7 @@ where
     // Start allocator metering (if enabled)
     allocator::start_metering();
 
-    // Start log system
-    let load_addr = addr_of!(app) as usize;
-    options.log.init(&version, load_addr)?;
-
-    #[cfg(feature = "rand")]
-    options.rand.init();
-
-    #[cfg(feature = "rayon")]
-    options.rayon.init()?;
+    // TODO: Early logging to catch errors before we start the runtime.
 
     // Launch Tokio runtime
     runtime::Builder::new_multi_thread()
@@ -136,9 +128,21 @@ where
             // Monitor for Ctrl-C
             shutdown::watch_signals();
 
+            // Start log system
+            let load_addr = addr_of!(app) as usize;
+            options.log.init(&version, load_addr)?;
+
+            #[cfg(feature = "rand")]
+            options.rand.init();
+
+            #[cfg(feature = "rayon")]
+            options.rayon.init()?;
+
             // Start prometheus
             #[cfg(feature = "prometheus")]
             let prometheus = tokio::spawn(prometheus::main(options.prometheus));
+
+            // Start tracing
 
             // Start main
             app(options.app).await.map_err(E::into)?;
@@ -149,6 +153,10 @@ where
             // Wait for prometheus to finish
             #[cfg(feature = "prometheus")]
             prometheus.await??;
+
+            // Submit remaining traces
+            #[cfg(feature = "opentelemetry")]
+            open_telemetry::shutdown();
 
             Result::<(), EyreError>::Ok(())
         })?;
