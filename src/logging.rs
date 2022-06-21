@@ -1,6 +1,5 @@
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
 
-use super::tokio_console;
 use crate::{default_from_structopt, Version};
 use core::str::FromStr;
 use eyre::{bail, Error as EyreError, Result as EyreResult, WrapErr as _};
@@ -15,6 +14,12 @@ use tracing_subscriber::{
     Layer, Registry,
 };
 use users::{get_current_gid, get_current_uid};
+
+#[cfg(feature = "opentelemetry")]
+use crate::open_telemetry;
+
+#[cfg(feature = "tokio-console")]
+use crate::tokio_console;
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Ord, Hash, Eq)]
 enum LogFormat {
@@ -64,8 +69,13 @@ pub struct Options {
     #[structopt(long, env, default_value = "pretty")]
     log_format: LogFormat,
 
+    #[cfg(feature = "tokio-console")]
     #[structopt(flatten)]
     pub tokio_console: tokio_console::Options,
+
+    #[cfg(feature = "opentelemetry")]
+    #[structopt(flatten)]
+    open_telemetry: open_telemetry::Options,
 }
 
 default_from_structopt!(Options);
@@ -97,17 +107,19 @@ impl Options {
         };
         let targets = verbosity.with_targets(log_filter);
 
-        // Support server for tokio-console
-        let console_layer = self.tokio_console.into_layer();
-
         // Route events to both tokio-console and stdout
-        let subscriber = Registry::default()
-            .with(console_layer)
+        let subscriber = Registry::default();
+
+        #[cfg(feature = "tokio-console")]
+        let subscriber = subscriber.with(self.tokio_console.into_layer());
+
+        #[cfg(feature = "opentelemetry")]
+        let subscriber = subscriber.with(self.open_telemetry.to_layer()?);
+
+        let subscriber = subscriber
             .with(ErrorLayer::default())
             .with(self.log_format.into_layer().with_filter(targets));
         tracing::subscriber::set_global_default(subscriber)?;
-
-        //         .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
 
         // Log version information
         info!(
@@ -136,10 +148,11 @@ pub mod test {
         let cmd = "arg0 -v --log-filter foo -vvv";
         let options = Options::from_iter_safe(cmd.split(' ')).unwrap();
         assert_eq!(options, Options {
-            verbose:       4,
-            log_filter:    "foo".to_owned(),
-            log_format:    LogFormat::Pretty,
-            tokio_console: tokio_console::Options::default(),
+            verbose:        4,
+            log_filter:     "foo".to_owned(),
+            log_format:     LogFormat::Pretty,
+            tokio_console:  tokio_console::Options::default(),
+            open_telemetry: open_telemetry::Options::default(),
         });
     }
 }

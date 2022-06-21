@@ -11,6 +11,7 @@ mod allocator;
 mod build;
 mod logging;
 mod metered_allocator;
+mod open_telemetry;
 mod prometheus;
 mod rand;
 mod rayon;
@@ -103,7 +104,11 @@ where
             "version",
             format!("{} {}", version.pkg_name, version.long_version),
         )
-        .install()?;
+        .install()
+        .map_err(|err| {
+            eprintln!("Error: {}", err);
+            err
+        })?;
 
     // Parse CLI and handle help and version (which will stop the application).
     let matches = Options::<O>::clap()
@@ -116,15 +121,7 @@ where
     // Start allocator metering (if enabled)
     allocator::start_metering();
 
-    // Start log system
-    let load_addr = addr_of!(app) as usize;
-    options.log.init(&version, load_addr)?;
-
-    #[cfg(feature = "rand")]
-    options.rand.init();
-
-    #[cfg(feature = "rayon")]
-    options.rayon.init()?;
+    // TODO: Early logging to catch errors before we start the runtime.
 
     // Launch Tokio runtime
     runtime::Builder::new_multi_thread()
@@ -134,6 +131,19 @@ where
         .block_on(async {
             // Monitor for Ctrl-C
             shutdown::watch_signals();
+
+            // Start log system
+            let load_addr = addr_of!(app) as usize;
+            options.log.init(&version, load_addr).map_err(|err| {
+                eprintln!("Error: {}", err);
+                err
+            })?;
+
+            #[cfg(feature = "rand")]
+            options.rand.init();
+
+            #[cfg(feature = "rayon")]
+            options.rayon.init()?;
 
             // Start prometheus
             #[cfg(feature = "prometheus")]
@@ -148,6 +158,10 @@ where
             // Wait for prometheus to finish
             #[cfg(feature = "prometheus")]
             prometheus.await??;
+
+            // Submit remaining traces
+            #[cfg(feature = "opentelemetry")]
+            open_telemetry::shutdown();
 
             Result::<(), EyreError>::Ok(())
         })?;

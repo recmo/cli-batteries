@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+* Added `opentelemetry` layer with `otlp` or `datadog` backends.
+
+## Changed
+
+* The tracing log is now constructed inside the Tokio runtime. This is for OpenTelemetry which requires an active runtime during construction.
+
 ## [0.1.5] — 2022-06-07
 
 ### Fixed

@@ -60,7 +60,9 @@ You can see this working in the [example project](./example).
 * `rayon`: Log and configure number of threads.
 * `prometheus`: Start a Prometheus metrics server.
 * `metered_allocator`: Collect metric on memory allocation, enables `prometheus`.
-* `tokio_console`: Start a Tokio console server.
+* `tokio-console`: Enable the `--tokio-console` option to start a Tokio console server on `http://127.0.0.1:6669/` for async inspection.
+* `otlp`: Enable the `--trace-otlp` option to push traces to an OpenTelementry collector.
+* `datadog`: Enable the `--trace-datadog` option to push traces to a DataDog v5 agent.
 
 [mimalloc]: https://github.com/microsoft/mimalloc
 
