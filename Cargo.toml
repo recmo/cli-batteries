@@ -14,6 +14,7 @@ license = "MIT"
 [features]
 mock_shutdown = []
 metered_allocator = [ "prometheus" ]
+tokio-console = [ "dep:console-subscriber" ]
 mimalloc = [ "dep:mimalloc" ]
 rand = [ "dep:rand", "dep:rand_chacha" ]
 rayon = [ "dep:rayon", "dep:num_cpus" ]
@@ -25,7 +26,6 @@ datadog = [ "opentelemetry", "dep:opentelemetry-datadog" ]
 [dependencies]
 chrono = "0.4"
 color-eyre = { version = "0.6", features = [ "issue-url" ] }
-console-subscriber = { version = "0.1", optional = true }
 criterion = { version = "0.3", optional = true, features = [ "async_tokio" ] }
 eyre = "0.6"
 futures = "0.3"
@@ -45,6 +45,9 @@ users = "0.11"
 
 # Optional dependencies
 url = { version = "2.2", optional = true }
+
+# tokio-console
+console-subscriber = { version = "0.1", optional = true }
 
 # Mimalloc feature
 mimalloc = { version = "0.1", optional = true }

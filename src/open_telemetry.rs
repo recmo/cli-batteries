@@ -1,10 +1,7 @@
 #![cfg(feature = "opentelemetry")]
 use crate::default_from_structopt;
 use eyre::{eyre, Result as EyreResult};
-use opentelemetry::{
-    global,
-    runtime::Tokio,
-};
+use opentelemetry::{global, runtime::Tokio};
 use opentelemetry_otlp::WithExportConfig;
 use std::time::Duration;
 use structopt::StructOpt;
@@ -31,7 +28,7 @@ pub struct Options {
 default_from_structopt!(Options);
 
 impl Options {
-    pub fn into_layer<S>(&self) -> EyreResult<impl Layer<S>>
+    pub fn to_layer<S>(&self) -> EyreResult<impl Layer<S>>
     where
         S: Subscriber + for<'a> LookupSpan<'a> + Sized,
     {
@@ -100,15 +97,10 @@ impl Options {
         }
 
         // Dummy layer
-        return Ok(None);
+        Ok(None)
     }
 }
 
 pub fn shutdown() {
     global::shutdown_tracer_provider();
-}
-
-#[cfg(test)]
-pub mod test {
-    use super::*;
 }

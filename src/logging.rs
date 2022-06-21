@@ -1,6 +1,5 @@
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
 
-use super::tokio_console;
 use crate::{default_from_structopt, Version};
 use core::str::FromStr;
 use eyre::{bail, Error as EyreError, Result as EyreResult, WrapErr as _};
@@ -18,6 +17,9 @@ use users::{get_current_gid, get_current_uid};
 
 #[cfg(feature = "opentelemetry")]
 use crate::open_telemetry;
+
+#[cfg(feature = "tokio-console")]
+use crate::tokio_console;
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Ord, Hash, Eq)]
 enum LogFormat {
@@ -67,6 +69,7 @@ pub struct Options {
     #[structopt(long, env, default_value = "pretty")]
     log_format: LogFormat,
 
+    #[cfg(feature = "tokio-console")]
     #[structopt(flatten)]
     pub tokio_console: tokio_console::Options,
 
@@ -111,7 +114,7 @@ impl Options {
         let subscriber = subscriber.with(self.tokio_console.into_layer());
 
         #[cfg(feature = "opentelemetry")]
-        let subscriber = subscriber.with(self.open_telemetry.into_layer()?);
+        let subscriber = subscriber.with(self.open_telemetry.to_layer()?);
 
         let subscriber = subscriber
             .with(ErrorLayer::default())

@@ -104,7 +104,11 @@ where
             "version",
             format!("{} {}", version.pkg_name, version.long_version),
         )
-        .install()?;
+        .install()
+        .map_err(|err| {
+            eprintln!("Error: {}", err);
+            err
+        })?;
 
     // Parse CLI and handle help and version (which will stop the application).
     let matches = Options::<O>::clap()
@@ -130,7 +134,10 @@ where
 
             // Start log system
             let load_addr = addr_of!(app) as usize;
-            options.log.init(&version, load_addr)?;
+            options.log.init(&version, load_addr).map_err(|err| {
+                eprintln!("Error: {}", err);
+                err
+            })?;
 
             #[cfg(feature = "rand")]
             options.rand.init();
@@ -141,8 +148,6 @@ where
             // Start prometheus
             #[cfg(feature = "prometheus")]
             let prometheus = tokio::spawn(prometheus::main(options.prometheus));
-
-            // Start tracing
 
             // Start main
             app(options.app).await.map_err(E::into)?;
