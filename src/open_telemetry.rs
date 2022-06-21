@@ -3,9 +3,7 @@ use crate::default_from_structopt;
 use eyre::{eyre, Result as EyreResult};
 use opentelemetry::{
     global,
-    global::tracer,
     runtime::Tokio,
-    sdk::{export::trace::stdout, trace::TracerProvider},
 };
 use opentelemetry_otlp::WithExportConfig;
 use std::time::Duration;
@@ -78,7 +76,7 @@ impl Options {
             // See <https://docs.rs/opentelemetry-otlp/0.10.0/opentelemetry_otlp/#kitchen-sink-full-configuration>
             let layer = OpenTelemetryLayer::new(tracer).with_tracked_inactivity(true);
 
-            return Ok(layer);
+            return Ok(Some(layer));
         }
 
         #[cfg(feature = "datadog")]
@@ -98,10 +96,11 @@ impl Options {
 
             let layer = OpenTelemetryLayer::new(tracer).with_tracked_inactivity(true);
 
-            return Ok(layer);
+            return Ok(Some(layer));
         }
 
-        todo!()
+        // Dummy layer
+        return Ok(None);
     }
 }
 
