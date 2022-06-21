@@ -11,7 +11,7 @@ use std::alloc::System;
 #[global_allocator]
 pub static ALLOCATOR: MeteredAllocator<System> = MeteredAllocator::new(System);
 
-#[cfg(all(feature = "mimalloc", not(feature = "metered_allocator")))]
+#[cfg(all(feature = "mimalloc", not(feature = "metered-allocator")))]
 #[global_allocator]
 pub static ALLOCATOR: MiMalloc = MiMalloc;
 

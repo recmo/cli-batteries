@@ -2,7 +2,7 @@
 name = "cli-batteries"
 description = "Batteries included opinionated command line interfaces"
 authors = ["Remco Bloemen <remco@wicked.ventures>"]
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
 homepage = "https://github.com/recmo/cli-batteries"
 repository = "https://github.com/recmo/cli-batteries"
