@@ -85,10 +85,19 @@ impl Options {
 
             // TODO: Custom reqwest client with timeout.
 
+            // HACK: openetelemetry-datadog adds /v0.5/traces to the url, but
+            // does not remove the final / that is present in the url after
+            // url.to_string(). This causes a double `//` to appear at the
+            // beginning and the datadog agent will respond with a 301 redirect
+            // to remove it. When handling the redirect, the method and payload
+            // of the request are lost due to a separate bug.
+            let url = url.to_string();
+            let trimmed = url.trim_end_matches('/');
+
             let tracer = new_pipeline()
                 .with_service_name("open_telemetry")
                 .with_version(ApiVersion::Version05)
-                .with_agent_endpoint(url.to_string())
+                .with_agent_endpoint(trimmed)
                 .install_batch(Tokio)?;
 
             let layer = OpenTelemetryLayer::new(tracer).with_tracked_inactivity(true);
