@@ -83,7 +83,11 @@ impl Options {
             // TODO: Early logging so we can actually see this message.
             info!(?url, "Sending traces to DataDog agent");
 
-            // TODO: Custom reqwest client with timeout.
+            // Construct a reqwest client with timeouts
+            let client = reqwest::Client::builder()
+                .connect_timeout(Duration::from_secs(5))
+                .timeout(Duration::from_secs(5))
+                .build()?;
 
             // HACK: openetelemetry-datadog adds /v0.5/traces to the url, but
             // does not remove the final / that is present in the url after
@@ -98,6 +102,7 @@ impl Options {
                 .with_service_name("open_telemetry")
                 .with_version(ApiVersion::Version05)
                 .with_agent_endpoint(trimmed)
+                .with_http_client::<reqwest::Client>(Box::new(client))
                 .install_batch(Tokio)?;
 
             let layer = OpenTelemetryLayer::new(tracer).with_tracked_inactivity(true);
