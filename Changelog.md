@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Changed
 
 * Removed datadog trace export support (which was broken).
+* Deprecated stuctopt in favor of clap derive.
 
 ## [0.1.7] — 2022-06-24
 
