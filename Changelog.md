@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+* Entity resource attributes for trace submission.
+
+## Changed
+
+* Removed datadog trace export support (which was broken).
+
 ## [0.1.7] — 2022-06-24
 
 ### Added

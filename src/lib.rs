@@ -160,7 +160,7 @@ where
             prometheus.await??;
 
             // Submit remaining traces
-            #[cfg(feature = "opentelemetry")]
+            #[cfg(feature = "otlp")]
             open_telemetry::shutdown();
 
             Result::<(), EyreError>::Ok(())

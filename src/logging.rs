@@ -15,7 +15,7 @@ use tracing_subscriber::{
 };
 use users::{get_current_gid, get_current_uid};
 
-#[cfg(feature = "opentelemetry")]
+#[cfg(feature = "otlp")]
 use crate::open_telemetry;
 
 #[cfg(feature = "tokio-console")]
@@ -73,7 +73,7 @@ pub struct Options {
     #[structopt(flatten)]
     pub tokio_console: tokio_console::Options,
 
-    #[cfg(feature = "opentelemetry")]
+    #[cfg(feature = "otlp")]
     #[structopt(flatten)]
     open_telemetry: open_telemetry::Options,
 }
@@ -113,8 +113,8 @@ impl Options {
         #[cfg(feature = "tokio-console")]
         let subscriber = subscriber.with(self.tokio_console.into_layer());
 
-        #[cfg(feature = "opentelemetry")]
-        let subscriber = subscriber.with(self.open_telemetry.to_layer()?);
+        #[cfg(feature = "otlp")]
+        let subscriber = subscriber.with(self.open_telemetry.to_layer(version)?);
 
         let subscriber = subscriber
             .with(ErrorLayer::default())
