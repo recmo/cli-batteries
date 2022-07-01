@@ -24,10 +24,9 @@ pub use crate::{
     shutdown::{await_shutdown, is_shutting_down, shutdown},
     version::Version,
 };
+use clap::{Args, Parser};
 use eyre::{Error as EyreError, Report, Result as EyreResult, WrapErr};
 use std::{future::Future, ptr::addr_of};
-use structopt::StructOptInternal;
-pub use structopt::{self, StructOpt};
 use tokio::runtime;
 use tracing::{error, info};
 
@@ -37,40 +36,39 @@ pub use crate::shutdown::reset_shutdown;
 #[cfg(feature = "metered-allocator")]
 use metered_allocator::MeteredAllocator;
 
-/// Implement [`Default`] for a type that implements [`StructOpt`] and has
+/// Implement [`Default`] for a type that implements [`Parser`] and has
 /// default values set for all fields.
 #[macro_export]
-macro_rules! default_from_structopt {
+macro_rules! default_from_clap {
     ($ty:ty) => {
         impl ::std::default::Default for $ty {
             fn default() -> Self {
-                <Self as ::structopt::StructOpt>::from_iter_safe::<Option<::std::ffi::OsString>>(
-                    None,
-                )
-                .unwrap()
+                use ::clap::Parser;
+                use ::std::ffi::OsString;
+                <Self as Parser>::parse_from::<Option<OsString>, OsString>(None)
             }
         }
     };
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default, StructOpt)]
-struct Options<O: StructOpt + StructOptInternal> {
-    #[structopt(flatten)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Parser)]
+struct Options<O: Args> {
+    #[clap(flatten)]
     log: logging::Options,
 
     #[cfg(feature = "rand")]
-    #[structopt(flatten)]
+    #[clap(flatten)]
     rand: rand::Options,
 
     #[cfg(feature = "rayon")]
-    #[structopt(flatten)]
+    #[clap(flatten)]
     rayon: rayon::Options,
 
     #[cfg(feature = "prometheus")]
-    #[structopt(flatten)]
+    #[clap(flatten)]
     prometheus: prometheus::Options,
 
-    #[structopt(flatten)]
+    #[clap(flatten)]
     app: O,
 }
 
@@ -78,7 +76,7 @@ struct Options<O: StructOpt + StructOptInternal> {
 pub fn run<A, O, F, E>(version: Version, app: A)
 where
     A: FnOnce(O) -> F,
-    O: StructOpt + StructOptInternal,
+    O: Args,
     F: Future<Output = Result<(), E>>,
     E: Into<Report> + Send + Sync + 'static,
 {
@@ -92,7 +90,7 @@ where
 fn run_fallible<A, O, F, E>(version: Version, app: A) -> EyreResult<()>
 where
     A: FnOnce(O) -> F,
-    O: StructOpt + StructOptInternal,
+    O: Args,
     F: Future<Output = Result<(), E>>,
     E: Into<Report> + Send + Sync + 'static,
 {

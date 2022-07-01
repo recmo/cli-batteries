@@ -1,16 +1,16 @@
 #![doc = include_str!("../Readme.md")]
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
 
+use clap::Parser;
 use cli_batteries::version;
 use std::{io::Result, path::PathBuf};
-use structopt::StructOpt;
 use tokio::fs::File;
 use tracing::instrument;
 
-#[derive(Clone, Debug, StructOpt)]
+#[derive(Clone, Debug, Parser)]
 struct Options {
     /// File to read
-    #[structopt(long, env, default_value = "Readme.md")]
+    #[clap(long, env, default_value = "Readme.md")]
     file: PathBuf,
 }
 

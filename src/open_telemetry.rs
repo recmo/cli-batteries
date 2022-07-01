@@ -1,5 +1,6 @@
 #![cfg(feature = "otlp")]
-use crate::{default_from_structopt, Version};
+use crate::{default_from_clap, Version};
+use clap::Parser;
 use eyre::{eyre, Result as EyreResult};
 use heck::ToSnakeCase;
 use opentelemetry::{
@@ -13,18 +14,17 @@ use opentelemetry::{
 };
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_semantic_conventions::resource;
-use std::{env, error::Error, time::Duration};
-use structopt::StructOpt;
+use std::{env, error::Error, str::FromStr, time::Duration};
 use tracing::{error, Subscriber};
 use tracing_opentelemetry::OpenTelemetryLayer;
 use tracing_subscriber::{registry::LookupSpan, Layer};
 use url::Url;
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, StructOpt)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]
 pub struct Options {
     /// Push telemetry traces to an OpenTelemetry node.
     /// Example: grpc://localhost:4317
-    #[structopt(long, env)]
+    #[clap(long, env)]
     trace_otlp: Option<Url>,
 
     /// Attributes to set on the trace submitting entity. By default
@@ -36,18 +36,18 @@ pub struct Options {
     /// They can also be set via the `TRACE_RESOURCE_*` environment variables
     /// where `*` is the attribute name converted to SHOUTY_SNAKE_CASE:
     /// `TRACE_RESOURCE_SERVICE_NAMESPACE=prod`.
-    #[structopt(long, parse(try_from_str = parse_key_val),)]
+    #[clap(long, parse(try_from_str = parse_key_val),)]
     trace_resource: Vec<(String, String)>,
 }
 
-default_from_structopt!(Options);
+default_from_clap!(Options);
 
-fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error>>
+fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error + Send + Sync>>
 where
-    T: std::str::FromStr,
-    T::Err: Error + 'static,
-    U: std::str::FromStr,
-    U::Err: Error + 'static,
+    T: FromStr,
+    T::Err: Error + Send + Sync + 'static,
+    U: FromStr,
+    U::Err: Error + Send + Sync + 'static,
 {
     let pos = s
         .find('=')
