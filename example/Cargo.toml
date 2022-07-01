@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cli-batteries = { path = "..", features = [ "rand", "rayon", "prometheus", "datadog", "otlp" ] }
+cli-batteries = { path = "..", features = [ "rand", "rayon", "prometheus", "otlp" ] }
 tokio = { version = "1.17", features = [ "fs" ] }
 tracing = "0.1.34"
 structopt = "0.3"
