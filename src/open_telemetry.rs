@@ -12,12 +12,13 @@ use opentelemetry::{
 };
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_semantic_conventions::resource;
-use std::time::Duration;
+use std::{error::Error, time::Duration};
 use structopt::StructOpt;
 use tracing::{error, info, Subscriber};
 use tracing_opentelemetry::OpenTelemetryLayer;
 use tracing_subscriber::{registry::LookupSpan, Layer};
 use url::Url;
+use crate::Version;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, StructOpt)]
 pub struct Options {
@@ -26,14 +27,29 @@ pub struct Options {
     #[structopt(long, env)]
     trace_otlp: Option<Url>,
 
-    #[structopt(long, env)]
+    /// Attributes to set on the trace submitting entity. By default
+    /// `service.name` and `service.version` are set.
+    #[structopt(long, env, parse(try_from_str = parse_key_val),)]
     trace_resource: Vec<(String, String)>,
 }
 
 default_from_structopt!(Options);
 
+fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error>>
+where
+    T: std::str::FromStr,
+    T::Err: Error + 'static,
+    U: std::str::FromStr,
+    U::Err: Error + 'static,
+{
+    let pos = s
+        .find('=')
+        .ok_or_else(|| format!("invalid KEY=value: no `=` found in `{}`", s))?;
+    Ok((s[..pos].parse()?, s[pos + 1..].parse()?))
+}
+
 impl Options {
-    pub fn to_layer<S>(&self) -> EyreResult<impl Layer<S>>
+    pub fn to_layer<S>(&self, version: &Version) -> EyreResult<impl Layer<S>>
     where
         S: Subscriber + for<'a> LookupSpan<'a> + Sized,
     {
@@ -59,17 +75,18 @@ impl Options {
             // Attributes for the trace generating entity.
             // See https://opentelemetry.io/docs/reference/specification/resource/semantic_conventions/
             let resource = {
-                use resource::*;
                 let build = Resource::new([
-                    SERVICE_NAME.string(),
-                    SERVICE_VERSION.string(),
-                    KeyValue::new("env", "TODO"),
-                    KeyValue::new("version", "TODO"),
+                    resource::SERVICE_NAME.string(version.pkg_name),
+                    resource::SERVICE_VERSION.string(format!("{}-{}", version.pkg_version, version.commit_hash)),
                 ]);
-                let arg = Resource::empty();
+                let cli = Resource::new(
+                    self.trace_resource
+                        .iter()
+                        .map(|(k, v)| KeyValue::new(k.to_owned(), v.to_owned())),
+                );
 
                 // Allow CLI to override build info.
-                build.merge(arg)
+                build.merge(&cli)
             };
 
             let exporter = new_exporter()
