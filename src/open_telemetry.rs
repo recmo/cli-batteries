@@ -1,6 +1,7 @@
 #![cfg(feature = "otlp")]
-use crate::default_from_structopt;
+use crate::{default_from_structopt, Version};
 use eyre::{eyre, Result as EyreResult};
+use heck::ToSnakeCase;
 use opentelemetry::{
     global,
     runtime::Tokio,
@@ -12,13 +13,12 @@ use opentelemetry::{
 };
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_semantic_conventions::resource;
-use std::{error::Error, time::Duration};
+use std::{env, error::Error, time::Duration};
 use structopt::StructOpt;
-use tracing::{error, info, Subscriber};
+use tracing::{error, Subscriber};
 use tracing_opentelemetry::OpenTelemetryLayer;
 use tracing_subscriber::{registry::LookupSpan, Layer};
 use url::Url;
-use crate::Version;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, StructOpt)]
 pub struct Options {
@@ -29,7 +29,14 @@ pub struct Options {
 
     /// Attributes to set on the trace submitting entity. By default
     /// `service.name` and `service.version` are set.
-    #[structopt(long, env, parse(try_from_str = parse_key_val),)]
+    ///
+    /// You can supply multiple arguments like
+    /// `--trace-resource env=prod --trace-resource region=us-east-1`.
+    ///
+    /// They can also be set via the `TRACE_RESOURCE_*` environment variables
+    /// where `*` is the attribute name converted to SHOUTY_SNAKE_CASE:
+    /// `TRACE_RESOURCE_SERVICE_NAMESPACE=prod`.
+    #[structopt(long, parse(try_from_str = parse_key_val),)]
     trace_resource: Vec<(String, String)>,
 }
 
@@ -77,16 +84,21 @@ impl Options {
             let resource = {
                 let build = Resource::new([
                     resource::SERVICE_NAME.string(version.pkg_name),
-                    resource::SERVICE_VERSION.string(format!("{}-{}", version.pkg_version, version.commit_hash)),
+                    resource::SERVICE_VERSION
+                        .string(format!("{}-{}", version.pkg_version, version.commit_hash)),
                 ]);
+                let env_vals = Resource::new(env::vars().filter_map(|(k, v)| {
+                    k.strip_prefix("TRACE_RESOURCE_")
+                        .map(|k| KeyValue::new(k.to_snake_case().replace('_', "."), v))
+                }));
                 let cli = Resource::new(
                     self.trace_resource
                         .iter()
-                        .map(|(k, v)| KeyValue::new(k.to_owned(), v.to_owned())),
+                        .map(|(k, v)| KeyValue::new(k.clone(), v.clone())),
                 );
 
-                // Allow CLI to override build info.
-                build.merge(&cli)
+                // Order of precedence: command line arguments, environment, build info.
+                build.merge(&env_vals).merge(&cli)
             };
 
             let exporter = new_exporter()
