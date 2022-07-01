@@ -1,7 +1,8 @@
 #![cfg(feature = "opentelemetry")]
 use crate::default_from_structopt;
 use eyre::{eyre, Result as EyreResult};
-use opentelemetry::{global, runtime::Tokio};
+use opentelemetry::{global, runtime::Tokio, KeyValue};
+use opentelemetry::sdk::{trace::{self}, Resource};
 use opentelemetry_otlp::WithExportConfig;
 use std::time::Duration;
 use structopt::StructOpt;
@@ -12,6 +13,15 @@ use url::Url;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, StructOpt)]
 pub struct Options {
+    #[structopt(long, env)]
+    service_name: Option<String>,
+
+    #[structopt(long, env)]
+    env: Option<String>,
+
+    #[structopt(long, env)]
+    version: Option<String>,
+
     /// Push telemetry traces to an OpenTelemetry node.
     /// Example: grpc://localhost:4317
     #[cfg(feature = "otlp")]
@@ -68,6 +78,13 @@ impl Options {
             let tracer = new_pipeline()
                 .tracing()
                 .with_exporter(exporter)
+                .with_trace_config(
+                    trace::config()
+                        .with_resource(
+                            Resource::new(vec![
+                                KeyValue::new("service.name", &self.service_name),
+                                KeyValue::new("env", &self.env),
+                                KeyValue::new("version", &self.version)])))
                 .install_batch(Tokio)?;
 
             // See <https://docs.rs/opentelemetry-otlp/0.10.0/opentelemetry_otlp/#kitchen-sink-full-configuration>
@@ -99,7 +116,7 @@ impl Options {
             let trimmed = url.trim_end_matches('/');
 
             let tracer = new_pipeline()
-                .with_service_name("open_telemetry")
+                .with_service_name(&self.service_name)
                 .with_version(ApiVersion::Version05)
                 .with_agent_endpoint(trimmed)
                 .with_http_client::<reqwest::Client>(Box::new(client))
