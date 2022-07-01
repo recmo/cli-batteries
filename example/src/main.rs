@@ -1,9 +1,8 @@
 #![doc = include_str!("../Readme.md")]
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
 
-use cli_batteries::version;
+use cli_batteries::{version, Parser};
 use std::{io::Result, path::PathBuf};
-use clap::Parser;
 use tokio::fs::File;
 use tracing::instrument;
 
