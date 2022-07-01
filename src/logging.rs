@@ -1,10 +1,10 @@
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
 
-use crate::{default_from_structopt, Version};
+use crate::{default_from_clap, Version};
+use clap::Parser;
 use core::str::FromStr;
 use eyre::{bail, Error as EyreError, Result as EyreResult, WrapErr as _};
 use std::{process::id as pid, thread::available_parallelism};
-use structopt::StructOpt;
 use tracing::{info, Level, Subscriber};
 use tracing_error::ErrorLayer;
 use tracing_subscriber::{
@@ -55,30 +55,30 @@ impl FromStr for LogFormat {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, StructOpt)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]
 pub struct Options {
     /// Verbose mode (-v, -vv, -vvv, etc.)
-    #[structopt(short, long, parse(from_occurrences))]
+    #[clap(short, long, parse(from_occurrences))]
     verbose: usize,
 
     /// Apply an env_filter compatible log filter
-    #[structopt(long, env, default_value)]
+    #[clap(long, env, default_value_t)]
     log_filter: String,
 
     /// Log format, one of 'compact', 'pretty' or 'json'
-    #[structopt(long, env, default_value = "pretty")]
+    #[clap(long, env, default_value = "pretty")]
     log_format: LogFormat,
 
     #[cfg(feature = "tokio-console")]
-    #[structopt(flatten)]
+    #[clap(flatten)]
     pub tokio_console: tokio_console::Options,
 
     #[cfg(feature = "opentelemetry")]
-    #[structopt(flatten)]
+    #[clap(flatten)]
     open_telemetry: open_telemetry::Options,
 }
 
-default_from_structopt!(Options);
+default_from_clap!(Options);
 
 impl Options {
     #[allow(clippy::borrow_as_ptr)] // ptr::addr_of! does not work here.

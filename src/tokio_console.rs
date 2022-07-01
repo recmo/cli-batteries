@@ -1,13 +1,13 @@
 #![cfg(feature = "tokio-console")]
+use clap::Parser;
 use console_subscriber::ConsoleLayer;
-use structopt::StructOpt;
 use tracing::Subscriber;
 use tracing_subscriber::{registry::LookupSpan, Layer};
 
-#[derive(Clone, Copy, Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, StructOpt)]
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]
 pub struct Options {
     /// Start a tokio-console server on `http://127.0.0.1:6669/`.
-    #[structopt(long)]
+    #[clap(long)]
     #[cfg(feature = "tokio-console")]
     pub tokio_console: bool,
 }

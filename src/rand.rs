@@ -1,15 +1,15 @@
 #![cfg(feature = "rand")]
+use clap::Parser;
 use rand::{rngs::OsRng, RngCore, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use std::num::ParseIntError;
-use structopt::StructOpt;
 use tracing::info;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Default, Hash, StructOpt)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Default, Hash, Parser)]
 pub struct Options {
     /// Random seed for deterministic runs.
     /// If not specified a new seed is generated from OS entropy.
-    #[structopt(long, env, parse(try_from_str = parse_hex_u64))]
+    #[clap(long, env, parse(try_from_str = parse_hex_u64))]
     random_seed: Option<u64>,
 }
 

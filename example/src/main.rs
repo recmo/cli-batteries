@@ -3,14 +3,14 @@
 
 use cli_batteries::version;
 use std::{io::Result, path::PathBuf};
-use structopt::StructOpt;
+use clap::Parser;
 use tokio::fs::File;
 use tracing::instrument;
 
-#[derive(Clone, Debug, StructOpt)]
+#[derive(Clone, Debug, Parser)]
 struct Options {
     /// File to read
-    #[structopt(long, env, default_value = "Readme.md")]
+    #[clap(long, env, default_value = "Readme.md")]
     file: PathBuf,
 }
 

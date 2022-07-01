@@ -1,31 +1,31 @@
 #![cfg(feature = "opentelemetry")]
-use crate::default_from_structopt;
+use crate::default_from_clap;
+use clap::Parser;
 use eyre::{eyre, Result as EyreResult};
 use opentelemetry::{global, runtime::Tokio};
 use opentelemetry_otlp::WithExportConfig;
 use std::time::Duration;
-use structopt::StructOpt;
 use tracing::{error, info, Subscriber};
 use tracing_opentelemetry::OpenTelemetryLayer;
 use tracing_subscriber::{registry::LookupSpan, Layer};
 use url::Url;
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, StructOpt)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]
 pub struct Options {
     /// Push telemetry traces to an OpenTelemetry node.
     /// Example: grpc://localhost:4317
     #[cfg(feature = "otlp")]
-    #[structopt(long, env)]
+    #[clap(long, env)]
     trace_otlp: Option<Url>,
 
     /// Push telemetry traces to a DataDog agent. Uses api version 5.
     /// Example: http://localhost:8126
     #[cfg(feature = "datadog")]
-    #[structopt(long, env)]
+    #[clap(long, env)]
     trace_datadog: Option<Url>,
 }
 
-default_from_structopt!(Options);
+default_from_clap!(Options);
 
 impl Options {
     pub fn to_layer<S>(&self) -> EyreResult<impl Layer<S>>

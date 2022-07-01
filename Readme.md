@@ -27,17 +27,17 @@ fn main() {
 }
 ```
 
-Then in your `src/main.rs` you define app specific command line arguments using [`StructOpt`][structopt] and run the app as follows
+Then in your `src/main.rs` you define app specific command line arguments using [`clap::Parser`][clap] and run the app as follows
 
 ```rust,ignore
-use cli_batteries::{version, StructOpt};
+use cli_batteries::{version, Parser};
 use std::{path::PathBuf, io::Result};
 use tokio::fs::File;
 
-#[derive(StructOpt)]
+#[derive(Parser)]
 struct Options {
     /// File to read
-    #[structopt(long, env, default_value = "Readme.md")]
+    #[clap(long, env, default_value = "Readme.md")]
     file: PathBuf,
 }
 
