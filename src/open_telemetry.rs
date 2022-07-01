@@ -14,8 +14,8 @@ use opentelemetry::{
 };
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_semantic_conventions::resource;
-use std::{env, error::Error, time::Duration};
-use tracing::{error, info, Subscriber};
+use std::{env, error::Error, str::FromStr, time::Duration};
+use tracing::{error, Subscriber};
 use tracing_opentelemetry::OpenTelemetryLayer;
 use tracing_subscriber::{registry::LookupSpan, Layer};
 use url::Url;
@@ -42,12 +42,12 @@ pub struct Options {
 
 default_from_clap!(Options);
 
-fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error>>
+fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error + Send + Sync>>
 where
-    T: std::str::FromStr,
-    T::Err: Error + 'static,
-    U: std::str::FromStr,
-    U::Err: Error + 'static,
+    T: FromStr,
+    T::Err: Error + Send + Sync + 'static,
+    U: FromStr,
+    U::Err: Error + Send + Sync + 'static,
 {
     let pos = s
         .find('=')
