@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] — 2022-07-06
+
+### Fixed
+
+* Apply log filter to spans and traces
+
 ## [0.2.0] — 2022-07-01
 
 ### Added
@@ -82,7 +88,8 @@ Collected various common pieces of code for the v0.1.0 release.
 
 <!-- links to version -->
 
-[unreleased]: https://github.com/recmo/cli-batteries/compare/v0.2.0...HEAD
+[unreleased]: https://github.com/recmo/cli-batteries/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/recmo/cli-batteries/releases/tag/v0.2.1
 [0.2.0]: https://github.com/recmo/cli-batteries/releases/tag/v0.2.0
 [0.1.7]: https://github.com/recmo/cli-batteries/releases/tag/v0.1.7
 [0.1.6]: https://github.com/recmo/cli-batteries/releases/tag/v0.1.6
