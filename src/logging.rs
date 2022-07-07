@@ -114,7 +114,11 @@ impl Options {
         let subscriber = subscriber.with(self.tokio_console.into_layer());
 
         #[cfg(feature = "otlp")]
-        let subscriber = subscriber.with(self.open_telemetry.to_layer(version)?);
+        let subscriber = subscriber.with(
+            self.open_telemetry
+                .to_layer(version)?
+                .with_filter(targets.clone()),
+        );
 
         let subscriber = subscriber
             .with(ErrorLayer::default())
