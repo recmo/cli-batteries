@@ -9,6 +9,7 @@
 
 mod allocator;
 mod build;
+mod log_fmt;
 mod logging;
 mod metered_allocator;
 mod open_telemetry;
@@ -128,7 +129,7 @@ where
         .wrap_err("Error creating Tokio runtime")?
         .block_on(async {
             // Monitor for Ctrl-C
-            shutdown::watch_signals();
+            // shutdown::watch_signals();
 
             // Start log system
             let load_addr = addr_of!(app) as usize;
@@ -158,6 +159,7 @@ where
             prometheus.await??;
 
             // Submit remaining traces
+            logging::shutdown()?;
             #[cfg(feature = "otlp")]
             open_telemetry::shutdown();
 

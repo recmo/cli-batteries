@@ -1,15 +1,20 @@
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
 
-use crate::{default_from_clap, Version};
+use crate::{default_from_clap, log_fmt::LogFmt, Version};
 use clap::Parser;
 use core::str::FromStr;
-use eyre::{bail, Error as EyreError, Result as EyreResult, WrapErr as _};
-use std::{process::id as pid, thread::available_parallelism};
+use eyre::{bail, eyre, Error as EyreError, Result as EyreResult, WrapErr as _};
+use once_cell::sync::OnceCell;
+use std::{
+    fs::File, io::BufWriter, path::PathBuf, process::id as pid, thread::available_parallelism,
+};
 use tracing::{info, Level, Subscriber};
 use tracing_error::ErrorLayer;
+use tracing_flame::{FlameLayer, FlushGuard};
+use tracing_log::{InterestCacheConfig, LogTracer};
 use tracing_subscriber::{
     filter::Targets,
-    fmt::{self, format::FmtSpan},
+    fmt::{self, format::FmtSpan, time::Uptime},
     layer::SubscriberExt,
     Layer, Registry,
 };
@@ -20,6 +25,8 @@ use crate::open_telemetry;
 
 #[cfg(feature = "tokio-console")]
 use crate::tokio_console;
+
+static FLAME_FLUSH_GUARD: OnceCell<Option<FlushGuard<BufWriter<File>>>> = OnceCell::new();
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Ord, Hash, Eq)]
 enum LogFormat {
@@ -33,9 +40,11 @@ impl LogFormat {
     where
         S: Subscriber + for<'a> tracing_subscriber::registry::LookupSpan<'a> + Send + Sync,
     {
-        let layer = fmt::Layer::new().with_span_events(FmtSpan::NEW | FmtSpan::CLOSE);
+        let layer = fmt::Layer::new().with_writer(std::io::stderr).with_span_events(FmtSpan::NEW | FmtSpan::CLOSE);
         match self {
-            Self::Compact => Box::new(layer.compact()) as Box<dyn Layer<S> + Send + Sync>,
+            Self::Compact => {
+                Box::new(layer.event_format(LogFmt::default())) as Box<dyn Layer<S> + Send + Sync>
+            }
             Self::Pretty => Box::new(layer.pretty()),
             Self::Json => Box::new(layer.json()),
         }
@@ -68,6 +77,10 @@ pub struct Options {
     /// Log format, one of 'compact', 'pretty' or 'json'
     #[clap(long, env, default_value = "pretty")]
     log_format: LogFormat,
+
+    /// Store traces in a flame graph file for processing with inferno.
+    #[clap(long, env)]
+    trace_flame: Option<PathBuf>,
 
     #[cfg(feature = "tokio-console")]
     #[clap(flatten)]
@@ -106,9 +119,25 @@ impl Options {
                 .wrap_err("Error parsing log-filter")?
         };
         let targets = verbosity.with_targets(log_filter);
+        dbg!(targets.clone());
 
         // Route events to both tokio-console and stdout
-        let subscriber = Registry::default();
+        let subscriber = Registry::default().with(ErrorLayer::default());
+
+        // Optional trace flame layer
+        let (flame, guard) = match self
+            .trace_flame
+            .as_ref()
+            .map(FlameLayer::with_file)
+            .transpose()?
+        {
+            Some((flame, guard)) => (Some(flame), Some(guard)),
+            None => (None, None),
+        };
+        let subscriber = subscriber.with(flame);
+        FLAME_FLUSH_GUARD
+            .set(guard)
+            .map_err(|_| eyre!("flame flush guard already initialized"))?;
 
         #[cfg(feature = "tokio-console")]
         let subscriber = subscriber.with(self.tokio_console.into_layer());
@@ -120,10 +149,13 @@ impl Options {
                 .with_filter(targets.clone()),
         );
 
-        let subscriber = subscriber
-            .with(ErrorLayer::default())
-            .with(self.log_format.into_layer().with_filter(targets));
+        let subscriber = subscriber.with(self.log_format.into_layer().with_filter(targets));
         tracing::subscriber::set_global_default(subscriber)?;
+
+        // Route `log` crate events to `tracing`
+        LogTracer::builder()
+            .with_interest_cache(InterestCacheConfig::default())
+            .init()?;
 
         // Log version information
         info!(
@@ -143,6 +175,15 @@ impl Options {
     }
 }
 
+pub fn shutdown() -> EyreResult<()> {
+    if let Some(value) = FLAME_FLUSH_GUARD.get() {
+        if let Some(flush_guard) = value {
+            flush_guard.flush()?;
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 pub mod test {
     use super::*;
@@ -155,6 +196,7 @@ pub mod test {
             verbose:        4,
             log_filter:     "foo".to_owned(),
             log_format:     LogFormat::Pretty,
+            trace_flame:    None,
             tokio_console:  tokio_console::Options::default(),
             open_telemetry: open_telemetry::Options::default(),
         });
