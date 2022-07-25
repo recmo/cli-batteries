@@ -39,7 +39,7 @@ where
         // Uptime
         let e = self.epoch.elapsed();
         write!(writer, "{}", dimmed.prefix())?;
-        write!(writer, "{:4}.{:06} ", e.as_secs(), e.subsec_nanos() / 1000)?;
+        write!(writer, "{:4}.{:06} ", e.as_secs(), e.subsec_micros())?;
         write!(writer, "{}", dimmed.suffix())?;
 
         // Log level

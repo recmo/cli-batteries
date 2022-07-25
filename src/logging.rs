@@ -14,7 +14,7 @@ use tracing_flame::{FlameLayer, FlushGuard};
 use tracing_log::{InterestCacheConfig, LogTracer};
 use tracing_subscriber::{
     filter::Targets,
-    fmt::{self, format::FmtSpan, time::Uptime},
+    fmt::{self, format::FmtSpan},
     layer::SubscriberExt,
     Layer, Registry,
 };
@@ -180,10 +180,8 @@ impl Options {
 }
 
 pub fn shutdown() -> EyreResult<()> {
-    if let Some(value) = FLAME_FLUSH_GUARD.get() {
-        if let Some(flush_guard) = value {
-            flush_guard.flush()?;
-        }
+    if let Some(Some(flush_guard)) = FLAME_FLUSH_GUARD.get() {
+        flush_guard.flush()?;
     }
     Ok(())
 }
