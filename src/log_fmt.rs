@@ -1,8 +1,16 @@
 use ansi_term::{Colour, Style};
-use std::{fmt::Result, time::Instant};
-use tracing::{Event, Level, Subscriber};
+use itertools::Itertools;
+use std::{
+    fmt::{Debug, Result},
+    time::Instant,
+};
+use tracing::{
+    field::{Field, Visit},
+    Event, Level, Subscriber,
+};
 use tracing_log::NormalizeEvent;
 use tracing_subscriber::{
+    field::RecordFields,
     fmt::{format::Writer, FmtContext, FormatEvent, FormatFields},
     registry::LookupSpan,
 };
@@ -53,7 +61,40 @@ where
         })?;
         write!(writer, "{}", bold.suffix())?;
 
-        ctx.format_fields(writer.by_ref(), event)?;
+        if meta.is_span() {
+            // Heuristic to detect open or close span
+            let open = !event
+                .fields()
+                .find(|field| field.name() == "time.busy")
+                .is_some();
+
+            let name = event
+                .parent()
+                .and_then(|id| ctx.span(id))
+                .map_or("unknown", |span| span.name());
+
+            // Create event with augmented message
+            let values = event.fields().map(|field| {
+                match field.name() {
+                    _ => 
+                }
+            }).collect::<Vec<_>>();
+            let vs = fs.value_set(&v);
+            let event = Event::new_child_of(event.parent(), meta, &vs);
+
+        }
+
+        // struct Visitor<'a>(Writer<'a>);
+        // impl<'a> Visit for Visitor<'a> {
+        //     fn record_debug(&mut self, field: &Field, value: &dyn Debug) {
+        //         write!(self.0, "{} = {:?}", field, value);
+        //     }
+        // }
+        // let mut visitor = Visitor(writer);
+        // event.record(&mut visitor);
+        // let mut writer = visitor.0;
+
+        ctx.format_fields(writer.by_ref(), event);
 
         writeln!(writer)?;
 
