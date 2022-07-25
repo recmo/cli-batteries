@@ -115,6 +115,7 @@ impl Options {
                 .with_default(all)
                 .with_target(version.pkg_name.replace('-', "_"), app)
                 .with_target(version.crate_name.replace('-', "_"), app)
+                .with_target("cli_batteries", app)
         };
         let log_filter = if self.log_filter.is_empty() {
             Targets::new()
@@ -195,12 +196,12 @@ pub mod test {
         let cmd = "arg0 -v --log-filter foo -vvv";
         let options = Options::from_iter_safe(cmd.split(' ')).unwrap();
         assert_eq!(options, Options {
-            verbose:        4,
-            log_filter:     "foo".to_owned(),
-            log_format:     LogFormat::Pretty,
-            trace_flame:    None,
+            verbose: 4,
+            log_filter: "foo".to_owned(),
+            log_format: LogFormat::Pretty,
+            trace_flame: None,
             #[cfg(feature = "tokio-console")]
-            tokio_console:  tokio_console::Options::default(),
+            tokio_console: tokio_console::Options::default(),
             #[cfg(feature = "otlp")]
             open_telemetry: open_telemetry::Options::default(),
         });
