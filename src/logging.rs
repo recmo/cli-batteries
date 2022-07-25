@@ -199,7 +199,9 @@ pub mod test {
             log_filter:     "foo".to_owned(),
             log_format:     LogFormat::Pretty,
             trace_flame:    None,
+            #[cfg(feature = "tokio-console")]
             tokio_console:  tokio_console::Options::default(),
+            #[cfg(feature = "otlp")]
             open_telemetry: open_telemetry::Options::default(),
         });
     }

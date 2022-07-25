@@ -129,6 +129,7 @@ where
         .wrap_err("Error creating Tokio runtime")?
         .block_on(async {
             // Monitor for Ctrl-C
+            #[cfg(feature = "signals")]
             shutdown::watch_signals();
 
             // Start log system

@@ -55,6 +55,7 @@ You can see this working in the [example project](./example).
 
 ## Features
 
+* `signals`: Handle Ctrl-C, SIGINT and SIGTERM with gracefull shutdown.
 * `mimalloc`: Use the [mimalloc] allocator with security hardening features enabled.
 * `rand`: Log and configure random seeds.
 * `rayon`: Log and configure number of threads.
