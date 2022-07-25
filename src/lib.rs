@@ -9,6 +9,7 @@
 
 mod allocator;
 mod build;
+mod log_fmt;
 mod logging;
 mod metered_allocator;
 mod open_telemetry;
@@ -158,6 +159,7 @@ where
             prometheus.await??;
 
             // Submit remaining traces
+            logging::shutdown()?;
             #[cfg(feature = "otlp")]
             open_telemetry::shutdown();
 
