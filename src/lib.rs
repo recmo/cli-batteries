@@ -9,6 +9,7 @@
 
 mod allocator;
 mod build;
+mod heartbeat;
 mod log_fmt;
 mod logging;
 mod metered_allocator;
@@ -22,6 +23,7 @@ mod version;
 
 pub use crate::{
     build::build_rs,
+    heartbeat::heartbeat,
     shutdown::{await_shutdown, is_shutting_down, shutdown},
     version::Version,
 };
@@ -128,6 +130,9 @@ where
         .build()
         .wrap_err("Error creating Tokio runtime")?
         .block_on(async {
+            // Start heartbeat
+            let heartbeat = tokio::spawn(heartbeat());
+
             // Monitor for Ctrl-C
             #[cfg(feature = "signals")]
             shutdown::watch_signals();
@@ -163,6 +168,9 @@ where
             logging::shutdown()?;
             #[cfg(feature = "otlp")]
             open_telemetry::shutdown();
+
+            // Join heartbeat thread
+            heartbeat.await?;
 
             Result::<(), EyreError>::Ok(())
         })?;
