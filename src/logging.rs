@@ -30,6 +30,7 @@ static FLAME_FLUSH_GUARD: OnceCell<Option<FlushGuard<BufWriter<File>>>> = OnceCe
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Ord, Hash, Eq)]
 enum LogFormat {
+    Tiny,
     Compact,
     Pretty,
     Json,
@@ -40,11 +41,14 @@ impl LogFormat {
     where
         S: Subscriber + for<'a> tracing_subscriber::registry::LookupSpan<'a> + Send + Sync,
     {
-        let layer = fmt::Layer::new().with_writer(std::io::stderr).with_span_events(FmtSpan::NEW | FmtSpan::CLOSE);
+        let layer = fmt::Layer::new()
+            .with_writer(std::io::stderr)
+            .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE);
         match self {
-            Self::Compact => {
+            Self::Tiny => {
                 Box::new(layer.event_format(LogFmt::default())) as Box<dyn Layer<S> + Send + Sync>
             }
+            Self::Compact => Box::new(layer.compact()),
             Self::Pretty => Box::new(layer.pretty()),
             Self::Json => Box::new(layer.json()),
         }
@@ -56,6 +60,7 @@ impl FromStr for LogFormat {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
+            "tiny" => Self::Tiny,
             "compact" => Self::Compact,
             "pretty" => Self::Pretty,
             "json" => Self::Json,
@@ -119,7 +124,6 @@ impl Options {
                 .wrap_err("Error parsing log-filter")?
         };
         let targets = verbosity.with_targets(log_filter);
-        dbg!(targets.clone());
 
         // Route events to both tokio-console and stdout
         let subscriber = Registry::default().with(ErrorLayer::default());

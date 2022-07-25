@@ -13,7 +13,9 @@ pub struct LogFmt {
 
 impl Default for LogFmt {
     fn default() -> Self {
-        Self { epoch: Instant::now() }
+        Self {
+            epoch: Instant::now(),
+        }
     }
 }
 
@@ -58,4 +60,3 @@ where
         Ok(())
     }
 }
-
