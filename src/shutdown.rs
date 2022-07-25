@@ -1,13 +1,10 @@
-use eyre::Result as EyreResult;
 use once_cell::sync::Lazy;
 use tokio::sync::watch::{self, Receiver, Sender};
+
+#[cfg(feature = "signals")]
+use eyre::Result as EyreResult;
+#[cfg(feature = "signals")]
 use tracing::{error, info};
-
-#[cfg(unix)]
-use tokio::signal::unix::{signal, SignalKind};
-
-#[cfg(not(unix))]
-use tokio::signal::ctrl_c;
 
 static NOTIFY: Lazy<(Sender<bool>, Receiver<bool>)> = Lazy::new(|| watch::channel(false));
 
@@ -51,6 +48,7 @@ pub async fn await_shutdown() {
     watch.changed().await.unwrap();
 }
 
+#[cfg(feature = "signals")]
 pub fn watch_signals() {
     tokio::spawn({
         async move {
@@ -63,9 +61,11 @@ pub fn watch_signals() {
     });
 }
 
-#[cfg(unix)]
+#[cfg(all(unix, feature = "signals"))]
 #[allow(clippy::module_name_repetitions)]
 async fn signal_shutdown() -> EyreResult<()> {
+    use tokio::signal::unix::{signal, SignalKind};
+
     let sigint = signal(SignalKind::interrupt())?;
     let sigterm = signal(SignalKind::terminate())?;
     tokio::pin!(sigint);
@@ -77,9 +77,11 @@ async fn signal_shutdown() -> EyreResult<()> {
     Ok(())
 }
 
-#[cfg(not(unix))]
+#[cfg(all(not(unix), feature = "signals"))]
 #[allow(clippy::module_name_repetitions)]
 async fn signal_shutdown() -> EyreResult<()> {
+    use tokio::signal::ctrl_c;
+
     ctrl_c().await?;
     info!("Ctrl-C received, shutting down");
     Ok(())
