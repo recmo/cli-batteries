@@ -14,11 +14,11 @@ struct Options {
     file: PathBuf,
 }
 
-#[instrument]
+#[instrument(name="Example app")]
 async fn app(options: Options) -> Result<()> {
-    let mut file = File::open(options.file).await?;
+    let mut file = File::open(options.file.clone()).await?;
     {
-        let span = span!(Level::INFO, "Reading file");
+        let span = span!(Level::INFO, "Reading file", file=?options.file);
         let _ = span.enter();
 
         let mut contents = String::new();
@@ -29,5 +29,5 @@ async fn app(options: Options) -> Result<()> {
 }
 
 fn main() {
-    cli_batteries::run(version!(), app);
+    cli_batteries::run(version!(mio), app);
 }

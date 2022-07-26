@@ -1,4 +1,4 @@
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct Version {
     pub pkg_name:     &'static str,
     pub pkg_version:  &'static str,
@@ -7,11 +7,12 @@ pub struct Version {
     pub commit_hash:  &'static str,
     pub long_version: &'static str,
     pub target:       &'static str,
+    pub app_crates:   Vec<String>,
 }
 
 #[macro_export]
 macro_rules! version {
-    () => {
+    ($($c:ident),* ) => {
         $crate::Version {
             pkg_name:     env!("CARGO_PKG_NAME"),
             pkg_version:  env!("CARGO_PKG_VERSION"),
@@ -36,6 +37,14 @@ macro_rules! version {
                 "\n",
                 env!("CARGO_PKG_DESCRIPTION"),
             ),
+            app_crates:   vec![
+                env!("CARGO_PKG_NAME").replace('-', "_"),
+                env!("CARGO_CRATE_NAME").replace('-', "_"),
+                "cli_batteries".to_owned(),
+                $(
+                    stringify!($c).to_string(),
+                )*
+            ],
         }
     };
 }

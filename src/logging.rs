@@ -6,7 +6,8 @@ use core::str::FromStr;
 use eyre::{bail, eyre, Error as EyreError, Result as EyreResult, WrapErr as _};
 use once_cell::sync::OnceCell;
 use std::{
-    fs::File, io::BufWriter, path::PathBuf, process::id as pid, thread::available_parallelism,
+    cmp::max, env, fs::File, io::BufWriter, path::PathBuf, process::id as pid,
+    thread::available_parallelism,
 };
 use tracing::{info, Level, Subscriber};
 use tracing_error::ErrorLayer;
@@ -48,6 +49,7 @@ impl LogFormat {
             Self::Tiny => Box::new(
                 layer
                     .event_format(TinyLogFmt::default())
+                    .fmt_fields(TinyLogFmt::default())
                     .map_event_format(SpanFormatter::new),
             ) as Box<dyn Layer<S> + Send + Sync>,
             Self::Compact => Box::new(layer.compact().map_event_format(SpanFormatter::new)),
@@ -74,15 +76,15 @@ impl FromStr for LogFormat {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]
 pub struct Options {
     /// Verbose mode (-v, -vv, -vvv, etc.)
-    #[clap(short, long, parse(from_occurrences))]
+    #[clap(short, long, env, parse(from_occurrences))]
     verbose: usize,
 
     /// Apply an env_filter compatible log filter
     #[clap(long, env, default_value_t)]
     log_filter: String,
 
-    /// Log format, one of 'compact', 'pretty' or 'json'
-    #[clap(long, env, default_value = "pretty")]
+    /// Log format, one of 'tiny', 'compact', 'pretty' or 'json'
+    #[clap(long, env, default_value = "tiny")]
     log_format: LogFormat,
 
     /// Store traces in a flame graph file for processing with inferno.
@@ -103,9 +105,16 @@ default_from_clap!(Options);
 impl Options {
     #[allow(clippy::borrow_as_ptr)] // ptr::addr_of! does not work here.
     pub fn init(&self, version: &Version, load_addr: usize) -> EyreResult<()> {
+        // Hack: ENV parsing for a `parse(from_occurrences)` argument
+        // is not supported. So we have to do it manually.
+        let verbose = env::var("VERBOSE")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .map_or(self.verbose, |e| max(e, self.verbose));
+
         // Log filtering is a combination of `--log-filter` and `--verbose` arguments.
         let verbosity = {
-            let (all, app) = match self.verbose {
+            let (all, app) = match verbose {
                 0 => (Level::ERROR, Level::INFO),
                 1 => (Level::INFO, Level::INFO),
                 2 => (Level::INFO, Level::DEBUG),
@@ -115,9 +124,7 @@ impl Options {
             };
             Targets::new()
                 .with_default(all)
-                .with_target(version.pkg_name.replace('-', "_"), app)
-                .with_target(version.crate_name.replace('-', "_"), app)
-                .with_target("cli_batteries", app)
+                .with_targets(version.app_crates.iter().map(|c| (c, app)))
         };
         let log_filter = if self.log_filter.is_empty() {
             Targets::new()
@@ -200,7 +207,7 @@ pub mod test {
         assert_eq!(options, Options {
             verbose: 4,
             log_filter: "foo".to_owned(),
-            log_format: LogFormat::Pretty,
+            log_format: LogFormat::Tiny,
             trace_flame: None,
             #[cfg(feature = "tokio-console")]
             tokio_console: tokio_console::Options::default(),
