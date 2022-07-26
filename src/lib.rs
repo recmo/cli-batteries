@@ -18,6 +18,7 @@ mod prometheus;
 mod rand;
 mod rayon;
 mod shutdown;
+mod span_formatter;
 mod tokio_console;
 mod version;
 
