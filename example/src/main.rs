@@ -14,7 +14,7 @@ struct Options {
     file: PathBuf,
 }
 
-#[instrument(name="Example app")]
+#[instrument(name = "Example app")]
 async fn app(options: Options) -> Result<()> {
     let mut file = File::open(options.file.clone()).await?;
     {

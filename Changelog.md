@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] — 2022-07-26
+
+### Added
+
+* Field formatter for tiny
+* Read verbosity from environment
+* Allow specifying additional crates to consider local
+
+### Changed
+
+* Tiny is now the default log format.
+
 ## [0.3.0] — 2022-07-25
 
 ### Added
@@ -104,8 +116,9 @@ Collected various common pieces of code for the v0.1.0 release.
 
 <!-- links to version -->
 
-[unreleased]: https://github.com/recmo/cli-batteries/compare/v0.3.0...HEAD
-[0.3.0]: https://github.com/recmo/cli-batteries/releases/tag/v0.2.1
+[unreleased]: https://github.com/recmo/cli-batteries/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/recmo/cli-batteries/releases/tag/v0.3.1
+[0.3.0]: https://github.com/recmo/cli-batteries/releases/tag/v0.3.0
 [0.2.1]: https://github.com/recmo/cli-batteries/releases/tag/v0.2.1
 [0.2.0]: https://github.com/recmo/cli-batteries/releases/tag/v0.2.0
 [0.1.7]: https://github.com/recmo/cli-batteries/releases/tag/v0.1.7
