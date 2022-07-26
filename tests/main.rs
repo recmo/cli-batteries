@@ -12,6 +12,7 @@ const MOCK_VERSION: Version = Version {
     commit_hash:  "7cdd3615368b7e2ed1e053f33628fe7f65e6a538",
     long_version: "v0.0.0 First release",
     target:       "aarch64-apple-darwin",
+    app_crates:   vec![],
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]

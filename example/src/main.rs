@@ -29,5 +29,5 @@ async fn app(options: Options) -> Result<()> {
 }
 
 fn main() {
-    cli_batteries::run(version!(), app);
+    cli_batteries::run(version!(mio), app);
 }

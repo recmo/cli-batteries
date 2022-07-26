@@ -6,7 +6,8 @@ use core::str::FromStr;
 use eyre::{bail, eyre, Error as EyreError, Result as EyreResult, WrapErr as _};
 use once_cell::sync::OnceCell;
 use std::{
-    fs::File, io::BufWriter, path::PathBuf, process::id as pid, thread::available_parallelism, env, cmp::max,
+    cmp::max, env, fs::File, io::BufWriter, path::PathBuf, process::id as pid,
+    thread::available_parallelism,
 };
 use tracing::{info, Level, Subscriber};
 use tracing_error::ErrorLayer;
@@ -105,7 +106,10 @@ impl Options {
     pub fn init(&self, version: &Version, load_addr: usize) -> EyreResult<()> {
         // Hack: ENV parsing for a `parse(from_occurrences)` argument
         // is not supported. So we have to do it manually.
-        let verbose = env::var("VERBOSE").ok().and_then(|s| s.parse().ok()).map_or(self.verbose, |e| max(e, self.verbose));
+        let verbose = env::var("VERBOSE")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .map_or(self.verbose, |e| max(e, self.verbose));
 
         // Log filtering is a combination of `--log-filter` and `--verbose` arguments.
         let verbosity = {
@@ -119,9 +123,7 @@ impl Options {
             };
             Targets::new()
                 .with_default(all)
-                .with_target(version.pkg_name.replace('-', "_"), app)
-                .with_target(version.crate_name.replace('-', "_"), app)
-                .with_target("cli_batteries", app)
+                .with_targets(version.app_crates.iter().map(|c| (c, app)))
         };
         let log_filter = if self.log_filter.is_empty() {
             Targets::new()
