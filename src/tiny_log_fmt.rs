@@ -7,11 +7,11 @@ use tracing_subscriber::{
     registry::LookupSpan,
 };
 
-pub struct LogFmt {
+pub struct TinyLogFmt {
     epoch: Instant,
 }
 
-impl Default for LogFmt {
+impl Default for TinyLogFmt {
     fn default() -> Self {
         Self {
             epoch: Instant::now(),
@@ -19,7 +19,7 @@ impl Default for LogFmt {
     }
 }
 
-impl<S, N> FormatEvent<S, N> for LogFmt
+impl<S, N> FormatEvent<S, N> for TinyLogFmt
 where
     S: Subscriber + for<'a> LookupSpan<'a>,
     N: for<'a> FormatFields<'a> + 'static,
@@ -52,11 +52,8 @@ where
             Level::ERROR => Colour::Red.paint("E"),
         })?;
         write!(writer, "{}", bold.suffix())?;
-
         ctx.format_fields(writer.by_ref(), event)?;
-
         writeln!(writer)?;
-
         Ok(())
     }
 }

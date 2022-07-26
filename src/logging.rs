@@ -1,6 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
 
-use crate::{default_from_clap, log_fmt::LogFmt, Version};
+use crate::{default_from_clap, span_formatter::SpanFormatter, tiny_log_fmt::TinyLogFmt, Version};
 use clap::Parser;
 use core::str::FromStr;
 use eyre::{bail, eyre, Error as EyreError, Result as EyreResult, WrapErr as _};
@@ -45,12 +45,14 @@ impl LogFormat {
             .with_writer(std::io::stderr)
             .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE);
         match self {
-            Self::Tiny => {
-                Box::new(layer.event_format(LogFmt::default())) as Box<dyn Layer<S> + Send + Sync>
-            }
-            Self::Compact => Box::new(layer.compact()),
-            Self::Pretty => Box::new(layer.pretty()),
-            Self::Json => Box::new(layer.json()),
+            Self::Tiny => Box::new(
+                layer
+                    .event_format(TinyLogFmt::default())
+                    .map_event_format(SpanFormatter::new),
+            ) as Box<dyn Layer<S> + Send + Sync>,
+            Self::Compact => Box::new(layer.compact().map_event_format(SpanFormatter::new)),
+            Self::Pretty => Box::new(layer.pretty().map_event_format(SpanFormatter::new)),
+            Self::Json => Box::new(layer.json().map_event_format(SpanFormatter::new)),
         }
     }
 }

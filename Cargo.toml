@@ -101,6 +101,3 @@ strip = true
 # while having neglible impact on incremental build times.
 [profile.dev.package."*"]
 opt-level = 3
-
-# [patch.crates-io]
-# tracing-subscriber = { path = "../../WLD/thirdparty/tracing/tracing-subscriber" }
