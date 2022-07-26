@@ -207,7 +207,7 @@ pub mod test {
         assert_eq!(options, Options {
             verbose: 4,
             log_filter: "foo".to_owned(),
-            log_format: LogFormat::Pretty,
+            log_format: LogFormat::Tiny,
             trace_flame: None,
             #[cfg(feature = "tokio-console")]
             tokio_console: tokio_console::Options::default(),
