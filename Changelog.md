@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] — 2022-07-25
+
+### Added
+
+* Heartbeat log messages every 5 min.
+* Log format `tiny` that is more condensed than tracing's `compact`.
+* `--trace-flame` to store traces in a flamegraph output file.
+* Capture `log` crate events.
+
+### Changed
+
+* Signal handling behind `signals` flag. Signals are no longer handled by default.
+* Log output now goes to stderr, not stdout.
+* Better formatting of span events.
+* Crate events are treated as app local.
+
 ## [0.2.1] — 2022-07-06
 
 ### Fixed
@@ -21,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Entity resource attributes for trace submission.
 
-## Changed
+### Changed
 
 * Removed datadog trace export support (which was broken).
 * Deprecated stuctopt in favor of clap derive.
@@ -88,7 +104,8 @@ Collected various common pieces of code for the v0.1.0 release.
 
 <!-- links to version -->
 
-[unreleased]: https://github.com/recmo/cli-batteries/compare/v0.2.1...HEAD
+[unreleased]: https://github.com/recmo/cli-batteries/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/recmo/cli-batteries/releases/tag/v0.2.1
 [0.2.1]: https://github.com/recmo/cli-batteries/releases/tag/v0.2.1
 [0.2.0]: https://github.com/recmo/cli-batteries/releases/tag/v0.2.0
 [0.1.7]: https://github.com/recmo/cli-batteries/releases/tag/v0.1.7

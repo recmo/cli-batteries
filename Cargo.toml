@@ -2,7 +2,7 @@
 name = "cli-batteries"
 description = "Batteries included opinionated command line interfaces"
 authors = ["Remco Bloemen <remco@wicked.ventures>"]
-version = "0.2.1"
+version = "0.3.0"
 edition = "2021"
 homepage = "https://github.com/recmo/cli-batteries"
 repository = "https://github.com/recmo/cli-batteries"
@@ -31,6 +31,7 @@ otlp = [
 ]
 
 [dependencies]
+ansi_term = "0.12.1"
 chrono = "0.4"
 clap = { version = "3.2", features = [ "derive", "env", "unicode", "wrap_help" ] }
 color-eyre = { version = "0.6", features = [ "issue-url" ] }
@@ -82,7 +83,6 @@ heck = { version = "0.4", optional = true }
 
 # TODO: Do we need this?
 time = { version = "0.3.5", features = [ "formatting", "parsing" ] }
-ansi_term = "0.12.1"
 
 [dev-dependencies]
 proptest = { version = "1.0" }
