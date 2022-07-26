@@ -49,6 +49,7 @@ impl LogFormat {
             Self::Tiny => Box::new(
                 layer
                     .event_format(TinyLogFmt::default())
+                    .fmt_fields(TinyLogFmt::default())
                     .map_event_format(SpanFormatter::new),
             ) as Box<dyn Layer<S> + Send + Sync>,
             Self::Compact => Box::new(layer.compact().map_event_format(SpanFormatter::new)),
