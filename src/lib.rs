@@ -77,6 +77,7 @@ struct Options<O: Args> {
 }
 
 /// Run the program.
+#[allow(clippy::needless_pass_by_value)]
 pub fn run<A, O, F, E>(version: Version, app: A)
 where
     A: FnOnce(O) -> F,
@@ -84,14 +85,14 @@ where
     F: Future<Output = Result<(), E>>,
     E: Into<Report> + Send + Sync + 'static,
 {
-    if let Err(report) = run_fallible(version, app) {
+    if let Err(report) = run_fallible(&version, app) {
         error!(?report, "{}", report);
         error!("Program terminating abnormally");
         std::process::exit(1);
     }
 }
 
-fn run_fallible<A, O, F, E>(version: Version, app: A) -> EyreResult<()>
+fn run_fallible<A, O, F, E>(version: &Version, app: A) -> EyreResult<()>
 where
     A: FnOnce(O) -> F,
     O: Args,
@@ -140,7 +141,7 @@ where
 
             // Start log system
             let load_addr = addr_of!(app) as usize;
-            options.log.init(&version, load_addr).map_err(|err| {
+            options.log.init(version, load_addr).map_err(|err| {
                 eprintln!("Error: {}", err);
                 err
             })?;

@@ -12,7 +12,7 @@ use tracing_log::NormalizeEvent;
 use tracing_subscriber::{
     field::{MakeVisitor, RecordFields, VisitFmt, VisitOutput},
     fmt::{format::Writer, FmtContext, FormatEvent, FormatFields, FormattedFields},
-    registry::{LookupSpan, Scope},
+    registry::LookupSpan,
 };
 
 pub struct TinyLogFmt {
@@ -115,7 +115,7 @@ impl<'writer> FormatFields<'writer> for TinyLogFmt {
 impl<'a> MakeVisitor<Writer<'a>> for TinyFields {
     type Visitor = TinyVisitor<'a>;
 
-    fn make_visitor(&self, mut writer: Writer<'a>) -> Self::Visitor {
+    fn make_visitor(&self, writer: Writer<'a>) -> Self::Visitor {
         TinyVisitor::new(writer, true)
     }
 }
@@ -146,14 +146,14 @@ impl<'a> Visit for TinyVisitor<'a> {
             return;
         }
         if field.name() == "message" {
-            self.record_debug(field, &format_args!("{}", value))
+            self.record_debug(field, &format_args!("{}", value));
         } else {
-            self.record_debug(field, &value)
+            self.record_debug(field, &value);
         }
     }
 
     fn record_error(&mut self, field: &Field, value: &(dyn std::error::Error + 'static)) {
-        self.record_debug(field, &format_args!("{}", value))
+        self.record_debug(field, &format_args!("{}", value));
     }
 
     fn record_debug(&mut self, field: &Field, value: &dyn Debug) {
