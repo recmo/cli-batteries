@@ -1,6 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
 
-use crate::{default_from_clap, log_fmt::LogFmt, span_formatter::SpanFormatter, Version};
+use crate::{default_from_clap, span_formatter::SpanFormatter, tiny_log_fmt::TinyLogFmt, Version};
 use clap::Parser;
 use core::str::FromStr;
 use eyre::{bail, eyre, Error as EyreError, Result as EyreResult, WrapErr as _};
@@ -47,7 +47,7 @@ impl LogFormat {
         match self {
             Self::Tiny => Box::new(
                 layer
-                    .event_format(LogFmt::default())
+                    .event_format(TinyLogFmt::default())
                     .map_event_format(SpanFormatter::new),
             ) as Box<dyn Layer<S> + Send + Sync>,
             Self::Compact => Box::new(layer.compact().map_event_format(SpanFormatter::new)),

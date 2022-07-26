@@ -1,17 +1,12 @@
-use ansi_term::{Colour, Style};
-use itertools::Itertools;
 use std::{
     fmt::{Debug, Error, Result},
     marker::PhantomData,
-    time::Instant,
 };
 use tracing::{
     field::{display, Field, FieldSet, Visit},
-    Event, Level, Subscriber, Value,
+    Event, Subscriber, Value,
 };
-use tracing_log::NormalizeEvent;
 use tracing_subscriber::{
-    field::RecordFields,
     fmt::{format::Writer, FmtContext, FormatEvent, FormatFields},
     registry::LookupSpan,
 };
@@ -26,13 +21,13 @@ where
     _phantom: PhantomData<(S, N)>,
 }
 
-impl<'b, Inner, S, N> SpanFormatter<Inner, S, N>
+impl<Inner, S, N> SpanFormatter<Inner, S, N>
 where
     Inner: FormatEvent<S, N>,
     S: Subscriber + for<'a> LookupSpan<'a>,
     N: for<'a> FormatFields<'a> + 'static,
 {
-    pub fn new(inner: Inner) -> Self {
+    pub const fn new(inner: Inner) -> Self {
         Self {
             inner,
             _phantom: PhantomData,
@@ -40,7 +35,7 @@ where
     }
 }
 
-impl<'b, Inner, S, N> FormatEvent<S, N> for SpanFormatter<Inner, S, N>
+impl<Inner, S, N> FormatEvent<S, N> for SpanFormatter<Inner, S, N>
 where
     Inner: FormatEvent<S, N>,
     S: Subscriber + for<'a> LookupSpan<'a>,
@@ -59,7 +54,7 @@ where
             struct Visitor {
                 time_busy: Option<String>,
                 time_idle: Option<String>,
-            };
+            }
             impl Visit for Visitor {
                 fn record_debug(&mut self, field: &Field, value: &dyn Debug) {
                     match field.name() {
@@ -77,7 +72,7 @@ where
             let span = event
                 .parent()
                 .and_then(|id| ctx.span(id))
-                .ok_or(Error::default())?;
+                .ok_or_else(Error::default)?;
             let message = span.name();
             if let (Some(time_busy), Some(time_idle)) = (visitor.time_busy, visitor.time_idle) {
                 // Closing event
@@ -112,7 +107,7 @@ where
                 self.inner.format_event(ctx, writer, &event)?;
             }
         } else {
-            self.inner.format_event(ctx, writer, &event)?;
+            self.inner.format_event(ctx, writer, event)?;
         }
         Ok(())
     }

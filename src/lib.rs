@@ -10,7 +10,6 @@
 mod allocator;
 mod build;
 mod heartbeat;
-mod log_fmt;
 mod logging;
 mod metered_allocator;
 mod open_telemetry;
@@ -19,6 +18,7 @@ mod rand;
 mod rayon;
 mod shutdown;
 mod span_formatter;
+mod tiny_log_fmt;
 mod tokio_console;
 mod version;
 

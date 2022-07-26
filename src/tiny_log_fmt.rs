@@ -1,25 +1,17 @@
 use ansi_term::{Colour, Style};
-use itertools::Itertools;
-use std::{
-    fmt::{Debug, Error, Result},
-    time::Instant,
-};
-use tracing::{
-    field::{display, Field, FieldSet, Visit},
-    Event, Level, Subscriber, Value,
-};
+use std::{fmt::Result, time::Instant};
+use tracing::{Event, Level, Subscriber};
 use tracing_log::NormalizeEvent;
 use tracing_subscriber::{
-    field::RecordFields,
     fmt::{format::Writer, FmtContext, FormatEvent, FormatFields},
     registry::LookupSpan,
 };
 
-pub struct LogFmt {
+pub struct TinyLogFmt {
     epoch: Instant,
 }
 
-impl Default for LogFmt {
+impl Default for TinyLogFmt {
     fn default() -> Self {
         Self {
             epoch: Instant::now(),
@@ -27,7 +19,7 @@ impl Default for LogFmt {
     }
 }
 
-impl<S, N> FormatEvent<S, N> for LogFmt
+impl<S, N> FormatEvent<S, N> for TinyLogFmt
 where
     S: Subscriber + for<'a> LookupSpan<'a>,
     N: for<'a> FormatFields<'a> + 'static,
@@ -60,7 +52,7 @@ where
             Level::ERROR => Colour::Red.paint("E"),
         })?;
         write!(writer, "{}", bold.suffix())?;
-        ctx.format_fields(writer.by_ref(), event);
+        ctx.format_fields(writer.by_ref(), event)?;
         writeln!(writer)?;
         Ok(())
     }
