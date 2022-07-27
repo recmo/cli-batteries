@@ -1,11 +1,12 @@
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
 
+mod json_format;
 mod open_telemetry;
 mod span_formatter;
 mod tiny_log_fmt;
 mod tokio_console;
 
-use self::{span_formatter::SpanFormatter, tiny_log_fmt::TinyLogFmt};
+use self::{json_format::JsonFormatter, span_formatter::SpanFormatter, tiny_log_fmt::TinyLogFmt};
 use crate::{default_from_clap, Version};
 use clap::Parser;
 use core::str::FromStr;
@@ -54,14 +55,13 @@ impl LogFormat {
             ) as Box<dyn Layer<S> + Send + Sync>,
             Self::Compact => Box::new(layer.compact().map_event_format(SpanFormatter::new)),
             Self::Pretty => Box::new(layer.pretty().map_event_format(SpanFormatter::new)),
-            // FEATURE: Link spans to logs.
-            // Blocked on <https://github.com/tokio-rs/tracing/issues/1481>
             Self::Json => Box::new(
                 layer
                     .json()
-                    .with_thread_ids(true)
-                    .with_thread_names(true)
-                    .with_current_span(true), //.map_event_format(SpanFormatter::new)
+                    .with_current_span(true)
+                    .with_span_list(false)
+                    .event_format(JsonFormatter)
+                    .map_event_format(SpanFormatter::new),
             ),
         }
     }
