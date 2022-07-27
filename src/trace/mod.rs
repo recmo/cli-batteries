@@ -1,6 +1,12 @@
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
 
-use crate::{default_from_clap, span_formatter::SpanFormatter, tiny_log_fmt::TinyLogFmt, Version};
+mod open_telemetry;
+mod span_formatter;
+mod tiny_log_fmt;
+mod tokio_console;
+
+use self::{span_formatter::SpanFormatter, tiny_log_fmt::TinyLogFmt};
+use crate::{default_from_clap, Version};
 use clap::Parser;
 use core::str::FromStr;
 use eyre::{bail, eyre, Error as EyreError, Result as EyreResult, WrapErr as _};
@@ -20,12 +26,6 @@ use tracing_subscriber::{
     Layer, Registry,
 };
 use users::{get_current_gid, get_current_uid};
-
-#[cfg(feature = "otlp")]
-use crate::open_telemetry;
-
-#[cfg(feature = "tokio-console")]
-use crate::tokio_console;
 
 static FLAME_FLUSH_GUARD: OnceCell<Option<FlushGuard<BufWriter<File>>>> = OnceCell::new();
 
@@ -54,7 +54,15 @@ impl LogFormat {
             ) as Box<dyn Layer<S> + Send + Sync>,
             Self::Compact => Box::new(layer.compact().map_event_format(SpanFormatter::new)),
             Self::Pretty => Box::new(layer.pretty().map_event_format(SpanFormatter::new)),
-            Self::Json => Box::new(layer.json().map_event_format(SpanFormatter::new)),
+            // FEATURE: Link spans to logs.
+            // Blocked on <https://github.com/tokio-rs/tracing/issues/1481>
+            Self::Json => Box::new(
+                layer
+                    .json()
+                    .with_thread_ids(true)
+                    .with_thread_names(true)
+                    .with_current_span(true), //.map_event_format(SpanFormatter::new)
+            ),
         }
     }
 }
@@ -193,6 +201,10 @@ pub fn shutdown() -> EyreResult<()> {
     if let Some(Some(flush_guard)) = FLAME_FLUSH_GUARD.get() {
         flush_guard.flush()?;
     }
+
+    #[cfg(feature = "otlp")]
+    open_telemetry::shutdown();
+
     Ok(())
 }
 
