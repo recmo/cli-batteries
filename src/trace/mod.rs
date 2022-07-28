@@ -1,12 +1,12 @@
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
 
-mod json_format;
 mod open_telemetry;
+mod otlp_format;
 mod span_formatter;
 mod tiny_log_fmt;
 mod tokio_console;
 
-use self::{json_format::JsonFormatter, span_formatter::SpanFormatter, tiny_log_fmt::TinyLogFmt};
+use self::{otlp_format::OtlpFormatter, span_formatter::SpanFormatter, tiny_log_fmt::TinyLogFmt};
 use crate::{default_from_clap, Version};
 use clap::Parser;
 use core::str::FromStr;
@@ -36,6 +36,7 @@ enum LogFormat {
     Compact,
     Pretty,
     Json,
+    Otlp,
 }
 
 impl LogFormat {
@@ -60,7 +61,12 @@ impl LogFormat {
                     .json()
                     .with_current_span(true)
                     .with_span_list(false)
-                    .event_format(JsonFormatter)
+                    .map_event_format(SpanFormatter::new),
+            ),
+            Self::Otlp => Box::new(
+                layer
+                    .json()
+                    .event_format(OtlpFormatter)
                     .map_event_format(SpanFormatter::new),
             ),
         }
@@ -76,6 +82,7 @@ impl FromStr for LogFormat {
             "compact" => Self::Compact,
             "pretty" => Self::Pretty,
             "json" => Self::Json,
+            "otlp" => Self::Otlp,
             _ => bail!("Invalid log format: {}", s),
         })
     }
@@ -91,7 +98,8 @@ pub struct Options {
     #[clap(long, env, default_value_t)]
     log_filter: String,
 
-    /// Log format, one of 'tiny', 'compact', 'pretty' or 'json'
+    /// Log format, one of 'tiny', 'compact', 'pretty', 'json', or 'otlp' (if
+    /// enabled)
     #[clap(long, env, default_value = "tiny")]
     log_format: LogFormat,
 
