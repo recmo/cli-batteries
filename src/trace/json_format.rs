@@ -1,4 +1,5 @@
 use chrono::Utc;
+use opentelemetry::trace::{SpanId, TraceContextExt};
 use serde::{
     ser::{SerializeMap, Serializer as _},
     Serializer,
@@ -10,13 +11,14 @@ use std::{
     marker::PhantomData,
 };
 use tracing::{span::Attributes, Event, Subscriber};
+use tracing_opentelemetry::OtelData;
 use tracing_serde::{fields::AsMap, AsSerde};
 use tracing_subscriber::{
     fmt::{
         format::{JsonFields, Writer},
         FmtContext, FormatEvent, FormatFields, FormattedFields,
     },
-    registry::LookupSpan,
+    registry::{LookupSpan, SpanRef},
 };
 
 // See https://github.com/tokio-rs/tracing/issues/1531#issuecomment-988172764
@@ -25,6 +27,23 @@ use tracing_subscriber::{
 use opentelemetry::trace::SpanBuilder;
 
 pub struct JsonFormatter;
+
+#[derive(Debug)]
+pub struct TraceInfo {
+    pub trace_id: String,
+    pub span_id:  String,
+}
+
+fn lookup_trace_info<S>(span_ref: &SpanRef<S>) -> Option<TraceInfo>
+where
+    S: Subscriber + for<'a> LookupSpan<'a>,
+{
+    dbg!(span_ref.extensions());
+    dbg!(span_ref.extensions().get::<OtelData>()).map(|o| TraceInfo {
+        trace_id: o.parent_cx.span().span_context().trace_id().to_string(),
+        span_id:  o.builder.span_id.unwrap_or(SpanId::INVALID).to_string(),
+    })
+}
 
 impl<S, N> FormatEvent<S, N> for JsonFormatter
 where
@@ -48,7 +67,7 @@ where
             None
         };
 
-        let mut visit = || {
+        (||{
             let mut serializer = serde_json::Serializer::new(WriteAdaptor::new(&mut writer));
 
             let mut serializer = serializer.serialize_map(None)?;
@@ -83,6 +102,8 @@ where
                 }
                 // Find trace_id by going up the stack
                 loop {
+                    dbg!(span_ref.extensions().get::<SpanBuilder>());
+                    dbg!(lookup_trace_info(&span_ref));
                     if let Some(builder) = span_ref.extensions().get::<SpanBuilder>() {
                         if let Some(trace_id) = builder.trace_id {
                             let trace_id = format!("{}", trace_id);
@@ -105,9 +126,8 @@ where
             }
 
             serializer.end()
-        };
+        })().map_err(|_| std::fmt::Error)?;
 
-        visit().map_err(|_| std::fmt::Error)?;
         writeln!(writer)
     }
 }

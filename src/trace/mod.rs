@@ -143,8 +143,16 @@ impl Options {
         };
         let targets = verbosity.with_targets(log_filter);
 
-        // Route events to both tokio-console and stdout
-        let subscriber = Registry::default().with(ErrorLayer::default());
+        // Tracing stack
+        let subscriber = Registry::default();
+
+        // OpenTelemetry layer
+        #[cfg(feature = "otlp")]
+        let subscriber = subscriber.with(
+            self.open_telemetry
+                .to_layer(version)?
+                .with_filter(targets.clone()),
+        );
 
         // Optional trace flame layer
         let (flame, guard) = match self
@@ -161,17 +169,17 @@ impl Options {
             .set(guard)
             .map_err(|_| eyre!("flame flush guard already initialized"))?;
 
+        // Tokio Console layer
         #[cfg(feature = "tokio-console")]
         let subscriber = subscriber.with(self.tokio_console.into_layer());
 
-        #[cfg(feature = "otlp")]
-        let subscriber = subscriber.with(
-            self.open_telemetry
-                .to_layer(version)?
-                .with_filter(targets.clone()),
-        );
+        // Include span traces in errors
+        let subscriber = subscriber.with(ErrorLayer::default());
 
+        // Log output
         let subscriber = subscriber.with(self.log_format.into_layer().with_filter(targets));
+
+        // Install
         tracing::subscriber::set_global_default(subscriber)?;
 
         // Route `log` crate events to `tracing`
