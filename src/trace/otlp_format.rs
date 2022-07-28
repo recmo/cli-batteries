@@ -56,6 +56,7 @@ where
     S: Subscriber + for<'a> LookupSpan<'a>,
     N: for<'a> FormatFields<'a> + 'static,
 {
+    #[allow(clippy::too_many_lines)]
     fn format_event(
         &self,
         ctx: &FmtContext<'_, S, N>,
@@ -66,10 +67,14 @@ where
         S: Subscriber + for<'a> LookupSpan<'a>,
     {
         let meta = event.metadata();
+
         // Event metadata
         let timestamp = Utc::now().timestamp_nanos();
         let trace_id = Some(0_u64); // TODO
-        let span_id = Some(0_u64); // TODO
+        let span_id = event
+            .parent().cloned()
+            .or_else(|| ctx.current_span().id().cloned())
+            .map(|id| id.into_u64());
         let (severity_text, severity_number) = match *meta.level() {
             Level::TRACE => ("TRACE", 1),
             Level::DEBUG => ("DEBUG", 5),
@@ -81,38 +86,32 @@ where
         let mut attributes = serde_json::Map::<String, Value>::new();
 
         // Find span and trace id
-        // if let Some(mut span_ref) = ctx.lookup_current() {
-        //     // Find span_id
-        //     if let Some(builder) = span_ref.extensions().get::<SpanBuilder>() &&
-        //             let Some(span_id) = builder.span_id {
-        //             let span_id = format!("{}", span_id);
-        //             serializer.serialize_entry("span_id", &span_id)?;
-        //             serializer.serialize_entry("dd.span_id", &span_id)?;
-        //         }
-        //     // Find trace_id by going up the stack
-        //     loop {
-        //         dbg!(span_ref.extensions().get::<SpanBuilder>());
-        //         dbg!(lookup_trace_info(&span_ref));
-        //         if let Some(builder) = span_ref.extensions().get::<SpanBuilder>() {
-        //             if let Some(trace_id) = builder.trace_id {
-        //                 let trace_id = format!("{}", trace_id);
-        //                 serializer.serialize_entry("trace_id", &trace_id)?;
-        //                 let suffix = if trace_id.len() > 16 {
-        //                     &trace_id[(trace_id.len() - 16)..]
-        //                 } else {
-        //                     &trace_id[..]
-        //                 };
-        //                 serializer.serialize_entry("dd.trace_id", suffix)?;
-        //                 break;
-        //             }
-        //         }
-        //         if let Some(parent) = span_ref.parent() {
-        //             span_ref = parent;
-        //         } else {
-        //             break;
-        //         }
-        //     }
-        // }
+        if let Some(mut span_ref) = ctx.lookup_current() && false{
+            dbg!(span_ref.id());
+            // Find span_id
+            if let Some(builder) = span_ref.extensions().get::<SpanBuilder>() &&
+                    let Some(span_id) = builder.span_id {
+                    let span_id = format!("{}", span_id);
+                    dbg!(span_id);
+                }
+            // Find trace_id by going up the stack
+            loop {
+                dbg!(span_ref.extensions().get::<SpanBuilder>());
+                dbg!(lookup_trace_info(&span_ref));
+                if let Some(builder) = span_ref.extensions().get::<SpanBuilder>() {
+                    if let Some(trace_id) = builder.trace_id {
+                        let trace_id = format!("{}", trace_id);
+                        dbg!(trace_id);
+                        break;
+                    }
+                }
+                if let Some(parent) = span_ref.parent() {
+                    span_ref = parent;
+                } else {
+                    break;
+                }
+            }
+        }
 
         // https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/span-general/#source-code-attributes
         // attributes.insert("code.function".into(), meta.target().into());
@@ -150,7 +149,7 @@ where
                     "log.module_path" => Some(("code.namespace".into(), v)),
                     "log.target" => None,
                     // Pass through
-                    _ => Some((k,v))
+                    _ => Some((k, v)),
                 }
             }));
         }
