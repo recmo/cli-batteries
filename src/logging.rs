@@ -57,8 +57,6 @@ impl LogFormat {
             Self::Json => Box::new(
                 layer
                     .json()
-                    .with_thread_ids(true)
-                    .with_thread_names(true)
                     .with_current_span(true)
                     .with_span_list(false)
                     .map_event_format(SpanFormatter::new),
