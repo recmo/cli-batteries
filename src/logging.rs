@@ -54,7 +54,15 @@ impl LogFormat {
             ) as Box<dyn Layer<S> + Send + Sync>,
             Self::Compact => Box::new(layer.compact().map_event_format(SpanFormatter::new)),
             Self::Pretty => Box::new(layer.pretty().map_event_format(SpanFormatter::new)),
-            Self::Json => Box::new(layer.json().map_event_format(SpanFormatter::new)),
+            Self::Json => Box::new(
+                layer
+                    .json()
+                    .with_thread_ids(true)
+                    .with_thread_names(true)
+                    .with_current_span(true)
+                    .with_span_list(false)
+                    .map_event_format(SpanFormatter::new),
+            ),
         }
     }
 }
