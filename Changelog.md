@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] — 2022-07-27
+
+### Removed
+
+* Removed span list from json log output.
+
 ## [0.3.1] — 2022-07-26
 
 ### Added
@@ -116,7 +122,8 @@ Collected various common pieces of code for the v0.1.0 release.
 
 <!-- links to version -->
 
-[unreleased]: https://github.com/recmo/cli-batteries/compare/v0.3.1...HEAD
+[unreleased]: https://github.com/recmo/cli-batteries/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/recmo/cli-batteries/releases/tag/v0.3.2
 [0.3.1]: https://github.com/recmo/cli-batteries/releases/tag/v0.3.1
 [0.3.0]: https://github.com/recmo/cli-batteries/releases/tag/v0.3.0
 [0.2.1]: https://github.com/recmo/cli-batteries/releases/tag/v0.2.1
