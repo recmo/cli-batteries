@@ -17,6 +17,9 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use tracing::{error, info, trace};
 use url::{Host, Url};
 
+// TODO: Spans, traceId and SpanKind trace_span!("request", "otel.kind" =
+// %SpanKind::Server, "http.url" = ..),
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]
 pub struct Options {
     /// Prometheus scrape endpoint

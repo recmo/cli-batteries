@@ -1,5 +1,5 @@
 use chrono::Utc;
-use opentelemetry::trace::{SpanId, TraceContextExt};
+use opentelemetry::trace::{SpanId, TraceContextExt, TraceId};
 use serde::{
     ser::{SerializeMap, Serializer as _},
     Serializer,
@@ -28,6 +28,9 @@ use tracing_subscriber::{
 // <https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/>
 
 // See https://github.com/tokio-rs/tracing/issues/1531#issuecomment-988172764
+
+// Note that span ids can get recycled and are not up to the standards from
+// OTLP. https://docs.rs/tracing-subscriber/latest/tracing_subscriber/struct.Registry.html#span-id-generation
 
 #[cfg(feature = "otlp")]
 use opentelemetry::trace::SpanBuilder;
@@ -67,14 +70,15 @@ where
         S: Subscriber + for<'a> LookupSpan<'a>,
     {
         let meta = event.metadata();
+        let span = event
+            .parent()
+            .and_then(|id| ctx.span(id))
+            .or_else(|| ctx.lookup_current());
 
         // Event metadata
         let timestamp = Utc::now().timestamp_nanos();
-        let trace_id = Some(0_u64); // TODO
-        let span_id = event
-            .parent().cloned()
-            .or_else(|| ctx.current_span().id().cloned())
-            .map(|id| id.into_u64());
+        let trace_id = Some(0_u128); // TODO
+        let span_id = span.as_ref().map(|s| s.id().into_u64());
         let (severity_text, severity_number) = match *meta.level() {
             Level::TRACE => ("TRACE", 1),
             Level::DEBUG => ("DEBUG", 5),
@@ -86,30 +90,17 @@ where
         let mut attributes = serde_json::Map::<String, Value>::new();
 
         // Find span and trace id
-        if let Some(mut span_ref) = ctx.lookup_current() && false{
-            dbg!(span_ref.id());
-            // Find span_id
-            if let Some(builder) = span_ref.extensions().get::<SpanBuilder>() &&
-                    let Some(span_id) = builder.span_id {
-                    let span_id = format!("{}", span_id);
-                    dbg!(span_id);
-                }
-            // Find trace_id by going up the stack
-            loop {
-                dbg!(span_ref.extensions().get::<SpanBuilder>());
-                dbg!(lookup_trace_info(&span_ref));
-                if let Some(builder) = span_ref.extensions().get::<SpanBuilder>() {
-                    if let Some(trace_id) = builder.trace_id {
-                        let trace_id = format!("{}", trace_id);
-                        dbg!(trace_id);
-                        break;
-                    }
-                }
-                if let Some(parent) = span_ref.parent() {
-                    span_ref = parent;
-                } else {
-                    break;
-                }
+        if let Some(mut span) = span {
+            let extensions = span.extensions();
+            if let Some(otel) = extensions.get::<OtelData>() {
+                let span_id = otel.builder.span_id;
+                let trace_id = otel.builder.trace_id;
+                dbg!((trace_id, span_id));
+            } else {
+                // BUG: The otel object is not available for span end events.
+                // This is because the Otel layer is higher in
+                // the stack and removes the extension before we
+                // get here.
             }
         }
 
@@ -121,8 +112,7 @@ where
             attributes.insert("code.filepath".into(), filepath.into());
         }
         if let Some(lineno) = meta.line() {
-            // TODO: Encode as int?
-            attributes.insert("code.lineno".into(), format!("{}", lineno).into());
+            attributes.insert("code.lineno".into(), lineno.into());
         }
 
         // https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/span-general/#source-code-attributes
@@ -177,7 +167,7 @@ where
             let mut log_map = serializer.serialize_map(None)?;
             log_map.serialize_entry("Timestamp", &format_args!("{}", timestamp))?;
             if let Some(trace_id) = trace_id {
-                log_map.serialize_entry("TraceId", &format_args!("{:016x}", trace_id))?;
+                log_map.serialize_entry("TraceId", &format_args!("{:032x}", trace_id))?;
             }
             if let Some(span_id) = span_id {
                 log_map.serialize_entry("SpanId", &format_args!("{:016x}", span_id))?;
