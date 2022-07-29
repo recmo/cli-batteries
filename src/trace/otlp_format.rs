@@ -43,17 +43,6 @@ pub struct TraceInfo {
     pub span_id:  String,
 }
 
-fn lookup_trace_info<S>(span_ref: &SpanRef<S>) -> Option<TraceInfo>
-where
-    S: Subscriber + for<'a> LookupSpan<'a>,
-{
-    dbg!(span_ref.extensions());
-    dbg!(span_ref.extensions().get::<OtelData>()).map(|o| TraceInfo {
-        trace_id: o.parent_cx.span().span_context().trace_id().to_string(),
-        span_id:  o.builder.span_id.unwrap_or(SpanId::INVALID).to_string(),
-    })
-}
-
 impl<S, N> FormatEvent<S, N> for OtlpFormatter
 where
     S: Subscriber + for<'a> LookupSpan<'a>,
@@ -77,8 +66,8 @@ where
 
         // Event metadata
         let timestamp = Utc::now().timestamp_nanos();
-        let trace_id = Some(0_u128); // TODO
-        let span_id = span.as_ref().map(|s| s.id().into_u64());
+        let mut trace_id = None;
+        let mut span_id = span.as_ref().map(|s| s.id().into_u64());
         let (severity_text, severity_number) = match *meta.level() {
             Level::TRACE => ("TRACE", 1),
             Level::DEBUG => ("DEBUG", 5),
@@ -90,17 +79,37 @@ where
         let mut attributes = serde_json::Map::<String, Value>::new();
 
         // Find span and trace id
+        // BUG: The otel object is not available for span end events.
+        // This is because the Otel layer is higher in
+        // the stack and removes the extension before we
+        // get here.
         if let Some(mut span) = span {
-            let extensions = span.extensions();
-            if let Some(otel) = extensions.get::<OtelData>() {
-                let span_id = otel.builder.span_id;
-                let trace_id = otel.builder.trace_id;
-                dbg!((trace_id, span_id));
-            } else {
-                // BUG: The otel object is not available for span end events.
-                // This is because the Otel layer is higher in
-                // the stack and removes the extension before we
-                // get here.
+            span_id = {
+                let extensions = span.extensions();
+                extensions
+                    .get::<OtelData>()
+                    .and_then(|otel| otel.builder.span_id)
+                    .map(|id| u64::from_be_bytes(id.to_bytes()))
+                    .or(span_id)
+            };
+
+            // Go up stack until we find a span with a trace id
+            loop {
+                trace_id = {
+                    let extensions = span.extensions();
+                    extensions
+                        .get::<OtelData>()
+                        .and_then(|otel| otel.builder.trace_id)
+                        .map(|id| u128::from_be_bytes(id.to_bytes()))
+                };
+                if trace_id.is_some() {
+                    break;
+                }
+                if let Some(parent) = span.parent() {
+                    span = parent;
+                } else {
+                    break;
+                }
             }
         }
 

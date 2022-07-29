@@ -14,8 +14,12 @@ use prometheus::{
     Histogram,
 };
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use tracing::{error, info, trace};
+use tracing::{error, info, instrument, trace, Span};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 use url::{Host, Url};
+
+use opentelemetry::global::get_text_map_propagator;
+use opentelemetry_http::HeaderExtractor;
 
 // TODO: Spans, traceId and SpanKind trace_span!("request", "otel.kind" =
 // %SpanKind::Server, "http.url" = ..),
@@ -80,7 +84,13 @@ async fn serve_req(_req: Request<Body>) -> Result<Response<Body>, hyper::Error> 
 }
 
 #[allow(clippy::unused_async)] // We are implementing an interface
+#[instrument(level="debug", skip(req), fields(http.uri = %req.uri(), http.method = %req.method()))]
 async fn route(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+    // Propagate trace context from request headers
+    let parent_cx =
+        get_text_map_propagator(|propagator| propagator.extract(&HeaderExtractor(req.headers())));
+    Span::current().set_parent(parent_cx);
+
     trace!("Receiving request at path {}", req.uri());
     REQ_COUNTER.inc();
     let timer = REQ_HISTOGRAM.start_timer();
