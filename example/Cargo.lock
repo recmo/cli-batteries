@@ -225,6 +225,7 @@ dependencies = [
  "heck 0.4.0",
  "hex",
  "hex-literal",
+ "http",
  "hyper",
  "itertools",
  "num_cpus",
@@ -260,12 +261,9 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "cli-batteries",
- "opentelemetry",
- "opentelemetry-http",
+ "http",
  "tokio",
  "tracing",
- "tracing-opentelemetry",
- "tracing-subscriber",
 ]
 
 [[package]]

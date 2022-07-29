@@ -3,8 +3,9 @@ use crate::{default_from_clap, Version};
 use clap::Parser;
 use eyre::{eyre, Result as EyreResult};
 use heck::ToSnakeCase;
+use http::header::HeaderMap;
 use opentelemetry::{
-    global::{self, BoxedTracer},
+    global::{self, get_text_map_propagator, BoxedTracer},
     runtime::Tokio,
     sdk::{
         propagation::TraceContextPropagator,
@@ -14,10 +15,11 @@ use opentelemetry::{
     trace::{noop::NoopTracer, TracerProvider as _},
     KeyValue,
 };
+use opentelemetry_http::{HeaderExtractor, HeaderInjector};
 use opentelemetry_semantic_conventions::resource;
 use std::{env, error::Error, str::FromStr, time::Duration};
-use tracing::{error, Subscriber};
-use tracing_opentelemetry::OpenTelemetryLayer;
+use tracing::{error, Span, Subscriber};
+use tracing_opentelemetry::{OpenTelemetryLayer, OpenTelemetrySpanExt};
 use tracing_subscriber::{registry::LookupSpan, Layer};
 use url::Url;
 
@@ -66,8 +68,8 @@ impl Options {
             error!(%error, "Error in OpenTelemetry: {}", error);
         })?;
 
-        // Set a format for propagating context. This MUST be provided, as the default
-        // is a no-op.
+        // Set a format for propagating context. TraceContextPropagator implements
+        // W3C Trace Context <https://www.w3.org/TR/trace-context/>
         global::set_text_map_propagator(TraceContextPropagator::new());
 
         let trace_config = trace::config()
@@ -148,6 +150,21 @@ impl Options {
                 .boxed())
         }
     }
+}
+
+/// Extract the W3C Trace Context from the headers of a request and add them
+/// to the current span.
+pub fn trace_from_headers(headers: &HeaderMap) {
+    Span::current().set_parent(get_text_map_propagator(|propagator| {
+        propagator.extract(&HeaderExtractor(headers))
+    }));
+}
+
+/// Insert the W3C Trace Context to the headers of a request.
+pub fn trace_to_headers(headers: &mut HeaderMap) {
+    get_text_map_propagator(|propagator| {
+        propagator.inject_context(&Span::current().context(), &mut HeaderInjector(headers));
+    });
 }
 
 pub fn shutdown() {

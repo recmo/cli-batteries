@@ -1,5 +1,5 @@
 #![cfg(feature = "prometheus")]
-use crate::{default_from_clap, shutdown::await_shutdown};
+use crate::{default_from_clap, shutdown::await_shutdown, trace_from_headers};
 use clap::Parser;
 use eyre::{bail, ensure, Result as EyreResult, WrapErr as _};
 use hyper::{
@@ -86,10 +86,8 @@ async fn serve_req(_req: Request<Body>) -> Result<Response<Body>, hyper::Error> 
 #[allow(clippy::unused_async)] // We are implementing an interface
 #[instrument(level="debug", skip(req), fields(http.uri = %req.uri(), http.method = %req.method()))]
 async fn route(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
-    // Propagate trace context from request headers
-    let parent_cx =
-        get_text_map_propagator(|propagator| propagator.extract(&HeaderExtractor(req.headers())));
-    Span::current().set_parent(parent_cx);
+    #[cfg(feature = "otlp")]
+    trace_from_headers(req.headers());
 
     trace!("Receiving request at path {}", req.uri());
     REQ_COUNTER.inc();

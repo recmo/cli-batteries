@@ -314,6 +314,7 @@ dependencies = [
  "heck 0.4.0",
  "hex",
  "hex-literal",
+ "http",
  "hyper",
  "itertools",
  "mimalloc",

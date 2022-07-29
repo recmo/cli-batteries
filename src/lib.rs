@@ -34,7 +34,10 @@ use tracing::{error, info};
 pub use crate::shutdown::reset_shutdown;
 
 #[cfg(feature = "metered-allocator")]
-use metered_allocator::MeteredAllocator;
+use crate::metered_allocator::MeteredAllocator;
+
+#[cfg(feature = "otlp")]
+pub use crate::trace::{trace_from_headers, trace_to_headers};
 
 /// Implement [`Default`] for a type that implements [`Parser`] and has
 /// default values set for all fields.
