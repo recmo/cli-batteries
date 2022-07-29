@@ -3,20 +3,23 @@ use crate::{default_from_clap, Version};
 use clap::Parser;
 use eyre::{eyre, Result as EyreResult};
 use heck::ToSnakeCase;
+use http::header::HeaderMap;
 use opentelemetry::{
-    global,
+    global::{self, get_text_map_propagator, BoxedTracer},
     runtime::Tokio,
     sdk::{
-        trace::{self},
+        propagation::TraceContextPropagator,
+        trace::{self, IdGenerator, Sampler, TracerProvider},
         Resource,
     },
+    trace::{noop::NoopTracer, TracerProvider as _},
     KeyValue,
 };
-use opentelemetry_otlp::WithExportConfig;
+use opentelemetry_http::{HeaderExtractor, HeaderInjector};
 use opentelemetry_semantic_conventions::resource;
 use std::{env, error::Error, str::FromStr, time::Duration};
-use tracing::{error, Subscriber};
-use tracing_opentelemetry::OpenTelemetryLayer;
+use tracing::{error, Span, Subscriber};
+use tracing_opentelemetry::{OpenTelemetryLayer, OpenTelemetrySpanExt};
 use tracing_subscriber::{registry::LookupSpan, Layer};
 use url::Url;
 
@@ -58,15 +61,30 @@ where
 impl Options {
     pub fn to_layer<S>(&self, version: &Version) -> EyreResult<impl Layer<S>>
     where
-        S: Subscriber + for<'a> LookupSpan<'a> + Sized,
+        S: Subscriber + for<'a> LookupSpan<'a> + Sized + Send + Sync,
     {
         // Propagate errors in the OpenTelemetry stack to the log.
         global::set_error_handler(|error| {
             error!(%error, "Error in OpenTelemetry: {}", error);
         })?;
 
+        // Set a format for propagating context. TraceContextPropagator implements
+        // W3C Trace Context <https://www.w3.org/TR/trace-context/>
+        global::set_text_map_propagator(TraceContextPropagator::new());
+
+        let trace_config = trace::config()
+            .with_sampler(Sampler::AlwaysOn)
+            .with_id_generator(IdGenerator::default())
+            .with_max_events_per_span(64)
+            .with_max_attributes_per_span(16)
+            .with_max_events_per_span(16)
+            .with_resource(Resource::new(vec![KeyValue::new(
+                "service.name",
+                "example",
+            )]));
+
         if let Some(url) = &self.trace_otlp {
-            use opentelemetry_otlp::{new_exporter, new_pipeline, Protocol};
+            use opentelemetry_otlp::{new_exporter, new_pipeline, Protocol, WithExportConfig};
 
             let protocol = match url.scheme() {
                 "http" => Protocol::HttpBinary,
@@ -101,6 +119,8 @@ impl Options {
                 build.merge(&env_vals).merge(&cli)
             };
 
+            // See <https://docs.rs/opentelemetry-otlp/0.10.0/opentelemetry_otlp/#kitchen-sink-full-configuration>
+
             let exporter = new_exporter()
                 .tonic()
                 .with_endpoint(url.to_string())
@@ -110,18 +130,41 @@ impl Options {
             let tracer = new_pipeline()
                 .tracing()
                 .with_exporter(exporter)
-                .with_trace_config(trace::config().with_resource(resource))
+                .with_trace_config(trace_config)
                 .install_batch(Tokio)?;
 
-            // See <https://docs.rs/opentelemetry-otlp/0.10.0/opentelemetry_otlp/#kitchen-sink-full-configuration>
-            let layer = OpenTelemetryLayer::new(tracer).with_tracked_inactivity(true);
-
-            return Ok(Some(layer));
+            Ok(OpenTelemetryLayer::new(tracer)
+                .with_tracked_inactivity(true)
+                .boxed())
+        } else {
+            // Create a non-exportin otel layer that produces span and trace ids for logs.
+            let mut trace_provider = TracerProvider::builder().with_config(trace_config).build();
+            let tracer = trace_provider.versioned_tracer(
+                env!("CARGO_PKG_NAME"),
+                Some(env!("CARGO_PKG_VERSION")),
+                Some(env!("CARGO_PKG_REPOSITORY")),
+            );
+            let _old_provider = global::set_tracer_provider(trace_provider);
+            Ok(OpenTelemetryLayer::new(tracer)
+                .with_tracked_inactivity(true)
+                .boxed())
         }
-
-        // Dummy layer
-        Ok(None)
     }
+}
+
+/// Extract the W3C Trace Context from the headers of a request and add them
+/// to the current span.
+pub fn trace_from_headers(headers: &HeaderMap) {
+    Span::current().set_parent(get_text_map_propagator(|propagator| {
+        propagator.extract(&HeaderExtractor(headers))
+    }));
+}
+
+/// Insert the W3C Trace Context to the headers of a request.
+pub fn trace_to_headers(headers: &mut HeaderMap) {
+    get_text_map_propagator(|propagator| {
+        propagator.inject_context(&Span::current().context(), &mut HeaderInjector(headers));
+    });
 }
 
 pub fn shutdown() {
