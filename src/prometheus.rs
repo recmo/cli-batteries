@@ -84,7 +84,7 @@ async fn serve_req(_req: Request<Body>) -> Result<Response<Body>, hyper::Error> 
 }
 
 #[allow(clippy::unused_async)] // We are implementing an interface
-#[instrument(level="debug", skip(req), fields(http.uri = %req.uri(), http.method = %req.method()))]
+#[instrument(level="debug", name="prometheus_request", skip(req), fields(http.uri = %req.uri(), http.method = %req.method()))]
 async fn route(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
     #[cfg(feature = "otlp")]
     trace_from_headers(req.headers());
