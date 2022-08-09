@@ -78,40 +78,31 @@ where
         let mut body = String::new();
         let mut attributes = serde_json::Map::<String, Value>::new();
 
-        // Find span and trace id
-        // BUG: The otel object is not available for span end events.
-        // This is because the Otel layer is higher in
-        // the stack and removes the extension before we
-        // get here.
-        if let Some(mut span) = span {
-            span_id = {
+        // Find Otel span id
+        // BUG: The otel object is not available for span end events. This is
+        // because the Otel layer is higher in the stack and removes the
+        // extension before we get here.
+        span_id = span
+            .and_then(|span| {
                 let extensions = span.extensions();
                 extensions
                     .get::<OtelData>()
                     .and_then(|otel| otel.builder.span_id)
                     .map(|id| u64::from_be_bytes(id.to_bytes()))
-                    .or(span_id)
-            };
+            })
+            .or(span_id); // Fallback to tracing span id
 
-            // Go up stack until we find a span with a trace id
-            loop {
-                trace_id = {
-                    let extensions = span.extensions();
-                    extensions
-                        .get::<OtelData>()
-                        .and_then(|otel| otel.builder.trace_id)
-                        .map(|id| u128::from_be_bytes(id.to_bytes()))
-                };
-                if trace_id.is_some() {
-                    break;
-                }
-                if let Some(parent) = span.parent() {
-                    span = parent;
-                } else {
-                    break;
-                }
-            }
-        }
+        // Find Otel trace id by going up the span stack until we find a span
+        // with a trace id.
+        trace_id = ctx.event_scope().and_then(|scope| {
+            scope.filter_map(|span| {
+                let extensions = span.extensions();
+                extensions
+                    .get::<OtelData>()
+                    .and_then(|otel| otel.builder.trace_id)
+                    .map(|id| u128::from_be_bytes(id.to_bytes()))
+            }).next()
+        }).or(trace_id);
 
         // https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/span-general/#source-code-attributes
         // attributes.insert("code.function".into(), meta.target().into());
