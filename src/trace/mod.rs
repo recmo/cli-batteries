@@ -48,7 +48,7 @@ impl LogFormat {
         S: Subscriber + for<'a> tracing_subscriber::registry::LookupSpan<'a> + Send + Sync,
     {
         let layer = fmt::Layer::new()
-            .with_writer(std::io::stdout)
+            .with_writer(std::io::stderr)
             .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE);
         match self {
             Self::Tiny => Box::new(
