@@ -14,8 +14,14 @@ use prometheus::{
     Histogram,
 };
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use tracing::{error, info, trace};
+use tracing::{error, info, instrument, trace};
 use url::{Host, Url};
+
+#[cfg(feature = "otlp")]
+use crate::trace_from_headers;
+
+// TODO: Spans, traceId and SpanKind trace_span!("request", "otel.kind" =
+// %SpanKind::Server, "http.url" = ..),
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]
 pub struct Options {
@@ -77,7 +83,11 @@ async fn serve_req(_req: Request<Body>) -> Result<Response<Body>, hyper::Error> 
 }
 
 #[allow(clippy::unused_async)] // We are implementing an interface
+#[instrument(level="debug", name="prometheus_request", skip(req), fields(http.uri = %req.uri(), http.method = %req.method()))]
 async fn route(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+    #[cfg(feature = "otlp")]
+    trace_from_headers(req.headers());
+
     trace!("Receiving request at path {}", req.uri());
     REQ_COUNTER.inc();
     let timer = REQ_HISTOGRAM.start_timer();

@@ -1,6 +1,13 @@
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
 
-use crate::{default_from_clap, span_formatter::SpanFormatter, tiny_log_fmt::TinyLogFmt, Version};
+mod open_telemetry;
+mod otlp_format;
+mod span_formatter;
+mod tiny_log_fmt;
+mod tokio_console;
+
+use self::{span_formatter::SpanFormatter, tiny_log_fmt::TinyLogFmt};
+use crate::{default_from_clap, Version};
 use clap::Parser;
 use core::str::FromStr;
 use eyre::{bail, eyre, Error as EyreError, Result as EyreResult, WrapErr as _};
@@ -22,10 +29,11 @@ use tracing_subscriber::{
 use users::{get_current_gid, get_current_uid};
 
 #[cfg(feature = "otlp")]
-use crate::open_telemetry;
+use otlp_format::OtlpFormatter;
 
-#[cfg(feature = "tokio-console")]
-use crate::tokio_console;
+#[cfg(feature = "otlp")]
+#[allow(clippy::useless_attribute, clippy::module_name_repetitions)]
+pub use self::open_telemetry::{trace_from_headers, trace_to_headers};
 
 static FLAME_FLUSH_GUARD: OnceCell<Option<FlushGuard<BufWriter<File>>>> = OnceCell::new();
 
@@ -35,6 +43,8 @@ enum LogFormat {
     Compact,
     Pretty,
     Json,
+    #[cfg(feature = "otlp")]
+    Otlp,
 }
 
 impl LogFormat {
@@ -61,6 +71,13 @@ impl LogFormat {
                     .with_span_list(false)
                     .map_event_format(SpanFormatter::new),
             ),
+            #[cfg(feature = "otlp")]
+            Self::Otlp => Box::new(
+                layer
+                    .json()
+                    .event_format(OtlpFormatter)
+                    .map_event_format(SpanFormatter::new),
+            ),
         }
     }
 }
@@ -74,6 +91,8 @@ impl FromStr for LogFormat {
             "compact" => Self::Compact,
             "pretty" => Self::Pretty,
             "json" => Self::Json,
+            #[cfg(feature = "otlp")]
+            "otlp" => Self::Otlp,
             _ => bail!("Invalid log format: {}", s),
         })
     }
@@ -89,7 +108,8 @@ pub struct Options {
     #[clap(long, env, default_value_t)]
     log_filter: String,
 
-    /// Log format, one of 'tiny', 'compact', 'pretty' or 'json'
+    /// Log format, one of 'tiny', 'compact', 'pretty', 'json', or 'otlp' (if
+    /// enabled)
     #[clap(long, env, default_value = "tiny")]
     log_format: LogFormat,
 
@@ -141,8 +161,16 @@ impl Options {
         };
         let targets = verbosity.with_targets(log_filter);
 
-        // Route events to both tokio-console and stdout
-        let subscriber = Registry::default().with(ErrorLayer::default());
+        // Tracing stack
+        let subscriber = Registry::default();
+
+        // OpenTelemetry layer
+        #[cfg(feature = "otlp")]
+        let subscriber = subscriber.with(
+            self.open_telemetry
+                .to_layer(version)?
+                .with_filter(targets.clone()),
+        );
 
         // Optional trace flame layer
         let (flame, guard) = match self
@@ -159,17 +187,17 @@ impl Options {
             .set(guard)
             .map_err(|_| eyre!("flame flush guard already initialized"))?;
 
+        // Tokio Console layer
         #[cfg(feature = "tokio-console")]
         let subscriber = subscriber.with(self.tokio_console.into_layer());
 
-        #[cfg(feature = "otlp")]
-        let subscriber = subscriber.with(
-            self.open_telemetry
-                .to_layer(version)?
-                .with_filter(targets.clone()),
-        );
+        // Include span traces in errors
+        let subscriber = subscriber.with(ErrorLayer::default());
 
+        // Log output
         let subscriber = subscriber.with(self.log_format.into_layer().with_filter(targets));
+
+        // Install
         tracing::subscriber::set_global_default(subscriber)?;
 
         // Route `log` crate events to `tracing`
@@ -199,6 +227,10 @@ pub fn shutdown() -> EyreResult<()> {
     if let Some(Some(flush_guard)) = FLAME_FLUSH_GUARD.get() {
         flush_guard.flush()?;
     }
+
+    #[cfg(feature = "otlp")]
+    open_telemetry::shutdown();
+
     Ok(())
 }
 

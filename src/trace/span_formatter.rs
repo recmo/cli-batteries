@@ -11,6 +11,8 @@ use tracing_subscriber::{
     registry::LookupSpan,
 };
 
+// See https://github.com/tokio-rs/tracing/issues/1531
+
 pub struct SpanFormatter<Inner, S, N>
 where
     Inner: FormatEvent<S, N>,

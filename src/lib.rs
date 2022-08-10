@@ -10,16 +10,12 @@
 mod allocator;
 mod build;
 mod heartbeat;
-mod logging;
 mod metered_allocator;
-mod open_telemetry;
 mod prometheus;
 mod rand;
 mod rayon;
 mod shutdown;
-mod span_formatter;
-mod tiny_log_fmt;
-mod tokio_console;
+mod trace;
 mod version;
 
 pub use crate::{
@@ -38,7 +34,10 @@ use tracing::{error, info};
 pub use crate::shutdown::reset_shutdown;
 
 #[cfg(feature = "metered-allocator")]
-use metered_allocator::MeteredAllocator;
+use crate::metered_allocator::MeteredAllocator;
+
+#[cfg(feature = "otlp")]
+pub use crate::trace::{trace_from_headers, trace_to_headers};
 
 /// Implement [`Default`] for a type that implements [`Parser`] and has
 /// default values set for all fields.
@@ -58,7 +57,7 @@ macro_rules! default_from_clap {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Parser)]
 struct Options<O: Args> {
     #[clap(flatten)]
-    log: logging::Options,
+    tracing: trace::Options,
 
     #[cfg(feature = "rand")]
     #[clap(flatten)]
@@ -141,7 +140,7 @@ where
 
             // Start log system
             let load_addr = addr_of!(app) as usize;
-            options.log.init(version, load_addr).map_err(|err| {
+            options.tracing.init(version, load_addr).map_err(|err| {
                 eprintln!("Error: {}", err);
                 err
             })?;
@@ -167,9 +166,7 @@ where
             prometheus.await??;
 
             // Submit remaining traces
-            logging::shutdown()?;
-            #[cfg(feature = "otlp")]
-            open_telemetry::shutdown();
+            trace::shutdown()?;
 
             // Join heartbeat thread
             heartbeat.await?;
