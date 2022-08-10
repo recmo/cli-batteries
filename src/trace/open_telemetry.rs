@@ -5,14 +5,14 @@ use eyre::{eyre, Result as EyreResult};
 use heck::ToSnakeCase;
 use http::header::HeaderMap;
 use opentelemetry::{
-    global::{self, get_text_map_propagator, BoxedTracer},
+    global::{self, get_text_map_propagator},
     runtime::Tokio,
     sdk::{
         propagation::TraceContextPropagator,
         trace::{self, IdGenerator, Sampler, TracerProvider},
         Resource,
     },
-    trace::{noop::NoopTracer, TracerProvider as _},
+    trace::TracerProvider as _,
     KeyValue,
 };
 use opentelemetry_http::{HeaderExtractor, HeaderInjector};
@@ -72,16 +72,35 @@ impl Options {
         // W3C Trace Context <https://www.w3.org/TR/trace-context/>
         global::set_text_map_propagator(TraceContextPropagator::new());
 
+        // Attributes for the trace generating entity.
+        // See https://opentelemetry.io/docs/reference/specification/resource/semantic_conventions/
+        let resource = {
+            let build = Resource::new([
+                resource::SERVICE_NAME.string(version.pkg_name),
+                resource::SERVICE_VERSION
+                    .string(format!("{}-{}", version.pkg_version, version.commit_hash)),
+            ]);
+            let env_vals = Resource::new(env::vars().filter_map(|(k, v)| {
+                k.strip_prefix("TRACE_RESOURCE_")
+                    .map(|k| KeyValue::new(k.to_snake_case().replace('_', "."), v))
+            }));
+            let cli = Resource::new(
+                self.trace_resource
+                    .iter()
+                    .map(|(k, v)| KeyValue::new(k.clone(), v.clone())),
+            );
+
+            // Order of precedence: command line arguments, environment, build info.
+            build.merge(&env_vals).merge(&cli)
+        };
+
         let trace_config = trace::config()
             .with_sampler(Sampler::AlwaysOn)
             .with_id_generator(IdGenerator::default())
             .with_max_events_per_span(64)
             .with_max_attributes_per_span(16)
             .with_max_events_per_span(16)
-            .with_resource(Resource::new(vec![KeyValue::new(
-                "service.name",
-                "example",
-            )]));
+            .with_resource(resource);
 
         if let Some(url) = &self.trace_otlp {
             use opentelemetry_otlp::{new_exporter, new_pipeline, Protocol, WithExportConfig};
@@ -95,28 +114,6 @@ impl Options {
                         url.scheme()
                     ))
                 }
-            };
-
-            // Attributes for the trace generating entity.
-            // See https://opentelemetry.io/docs/reference/specification/resource/semantic_conventions/
-            let resource = {
-                let build = Resource::new([
-                    resource::SERVICE_NAME.string(version.pkg_name),
-                    resource::SERVICE_VERSION
-                        .string(format!("{}-{}", version.pkg_version, version.commit_hash)),
-                ]);
-                let env_vals = Resource::new(env::vars().filter_map(|(k, v)| {
-                    k.strip_prefix("TRACE_RESOURCE_")
-                        .map(|k| KeyValue::new(k.to_snake_case().replace('_', "."), v))
-                }));
-                let cli = Resource::new(
-                    self.trace_resource
-                        .iter()
-                        .map(|(k, v)| KeyValue::new(k.clone(), v.clone())),
-                );
-
-                // Order of precedence: command line arguments, environment, build info.
-                build.merge(&env_vals).merge(&cli)
             };
 
             // See <https://docs.rs/opentelemetry-otlp/0.10.0/opentelemetry_otlp/#kitchen-sink-full-configuration>
@@ -138,7 +135,7 @@ impl Options {
                 .boxed())
         } else {
             // Create a non-exportin otel layer that produces span and trace ids for logs.
-            let mut trace_provider = TracerProvider::builder().with_config(trace_config).build();
+            let trace_provider = TracerProvider::builder().with_config(trace_config).build();
             let tracer = trace_provider.versioned_tracer(
                 env!("CARGO_PKG_NAME"),
                 Some(env!("CARGO_PKG_VERSION")),

@@ -14,12 +14,8 @@ use prometheus::{
     Histogram,
 };
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use tracing::{error, info, instrument, trace, Span};
-use tracing_opentelemetry::OpenTelemetrySpanExt;
+use tracing::{error, info, instrument, trace};
 use url::{Host, Url};
-
-use opentelemetry::global::get_text_map_propagator;
-use opentelemetry_http::HeaderExtractor;
 
 // TODO: Spans, traceId and SpanKind trace_span!("request", "otel.kind" =
 // %SpanKind::Server, "http.url" = ..),

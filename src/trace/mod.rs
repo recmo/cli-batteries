@@ -29,6 +29,7 @@ use tracing_subscriber::{
 use users::{get_current_gid, get_current_uid};
 
 #[cfg(feature = "otlp")]
+#[allow(clippy::useless_attribute, clippy::module_name_repetitions)]
 pub use self::open_telemetry::{trace_from_headers, trace_to_headers};
 
 static FLAME_FLUSH_GUARD: OnceCell<Option<FlushGuard<BufWriter<File>>>> = OnceCell::new();

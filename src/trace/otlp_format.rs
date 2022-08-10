@@ -1,26 +1,16 @@
 use chrono::Utc;
-use opentelemetry::trace::{SpanId, TraceContextExt, TraceId};
-use serde::{
-    ser::{SerializeMap, Serializer as _},
-    Serializer,
-};
+use serde::{ser::SerializeMap, Serializer};
 use serde_json::Value;
 use std::{
-    collections::BTreeMap,
     fmt::{Error, Result},
-    io,
-    marker::PhantomData,
-    thread,
+    io, thread,
 };
-use tracing::{span::Attributes, Event, Level, Subscriber};
+use tracing::{Event, Level, Subscriber};
 use tracing_opentelemetry::OtelData;
-use tracing_serde::{fields::AsMap, AsSerde};
+use tracing_serde::fields::AsMap;
 use tracing_subscriber::{
-    fmt::{
-        format::{JsonFields, Writer},
-        FmtContext, FormatEvent, FormatFields, FormattedFields,
-    },
-    registry::{LookupSpan, SpanRef},
+    fmt::{format::Writer, FmtContext, FormatEvent, FormatFields, FormattedFields},
+    registry::LookupSpan,
 };
 
 // Implements <https://opentelemetry.io/docs/reference/specification/logs/data-model/>
@@ -31,9 +21,6 @@ use tracing_subscriber::{
 
 // Note that span ids can get recycled and are not up to the standards from
 // OTLP. https://docs.rs/tracing-subscriber/latest/tracing_subscriber/struct.Registry.html#span-id-generation
-
-#[cfg(feature = "otlp")]
-use opentelemetry::trace::SpanBuilder;
 
 pub struct OtlpFormatter;
 
@@ -96,16 +83,14 @@ where
         // with a trace id.
         trace_id = ctx
             .event_scope()
-            .and_then(|scope| {
-                scope
-                    .filter_map(|span| {
-                        let extensions = span.extensions();
-                        extensions
-                            .get::<OtelData>()
-                            .and_then(|otel| otel.builder.trace_id)
-                            .map(|id| u128::from_be_bytes(id.to_bytes()))
-                    })
-                    .next()
+            .and_then(|mut scope| {
+                scope.find_map(|span| {
+                    let extensions = span.extensions();
+                    extensions
+                        .get::<OtelData>()
+                        .and_then(|otel| otel.builder.trace_id)
+                        .map(|id| u128::from_be_bytes(id.to_bytes()))
+                })
             })
             .or(trace_id);
 
