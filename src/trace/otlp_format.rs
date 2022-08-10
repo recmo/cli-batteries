@@ -1,3 +1,4 @@
+#![cfg(feature = "otlp")]
 use chrono::Utc;
 use serde::{ser::SerializeMap, Serializer};
 use serde_json::Value;

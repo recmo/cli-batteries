@@ -14,14 +14,3 @@ http = "0.2.8"
 
 [build-dependencies]
 cli-batteries = { path = ".." }
-
-[patch.crates-io]
-tracing = { path = "../../thirdparty/tracing/tracing" }
-tracing-core = { path = "../../thirdparty/tracing/tracing-core" }
-tracing-serde = { path = "../../thirdparty/tracing/tracing-serde" }
-tracing-log = { path = "../../thirdparty/tracing/tracing-log" }
-tracing-subscriber = { path = "../../thirdparty/tracing/tracing-subscriber" }
-tracing-error = { path = "../../thirdparty/tracing/tracing-error" }
-tracing-futures = { path = "../../thirdparty/tracing/tracing-futures" }
-tracing-flame = { path = "../../thirdparty/tracing/tracing-flame" }
-tracing-opentelemetry = { path = "../../thirdparty/tracing/tracing-opentelemetry" }

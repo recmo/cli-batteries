@@ -6,7 +6,7 @@ mod span_formatter;
 mod tiny_log_fmt;
 mod tokio_console;
 
-use self::{otlp_format::OtlpFormatter, span_formatter::SpanFormatter, tiny_log_fmt::TinyLogFmt};
+use self::{ span_formatter::SpanFormatter, tiny_log_fmt::TinyLogFmt};
 use crate::{default_from_clap, Version};
 use clap::Parser;
 use core::str::FromStr;
@@ -29,6 +29,9 @@ use tracing_subscriber::{
 use users::{get_current_gid, get_current_uid};
 
 #[cfg(feature = "otlp")]
+use otlp_format::OtlpFormatter;
+
+#[cfg(feature = "otlp")]
 #[allow(clippy::useless_attribute, clippy::module_name_repetitions)]
 pub use self::open_telemetry::{trace_from_headers, trace_to_headers};
 
@@ -40,6 +43,7 @@ enum LogFormat {
     Compact,
     Pretty,
     Json,
+    #[cfg(feature = "otlp")]
     Otlp,
 }
 
@@ -67,6 +71,7 @@ impl LogFormat {
                     .with_span_list(false)
                     .map_event_format(SpanFormatter::new),
             ),
+            #[cfg(feature = "otlp")]
             Self::Otlp => Box::new(
                 layer
                     .json()
@@ -86,6 +91,7 @@ impl FromStr for LogFormat {
             "compact" => Self::Compact,
             "pretty" => Self::Pretty,
             "json" => Self::Json,
+            #[cfg(feature = "otlp")]
             "otlp" => Self::Otlp,
             _ => bail!("Invalid log format: {}", s),
         })
