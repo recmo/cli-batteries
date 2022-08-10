@@ -6,7 +6,7 @@ mod span_formatter;
 mod tiny_log_fmt;
 mod tokio_console;
 
-use self::{ span_formatter::SpanFormatter, tiny_log_fmt::TinyLogFmt};
+use self::{span_formatter::SpanFormatter, tiny_log_fmt::TinyLogFmt};
 use crate::{default_from_clap, Version};
 use clap::Parser;
 use core::str::FromStr;

@@ -1,5 +1,5 @@
 #![cfg(feature = "prometheus")]
-use crate::{default_from_clap, shutdown::await_shutdown, trace_from_headers};
+use crate::{default_from_clap, shutdown::await_shutdown};
 use clap::Parser;
 use eyre::{bail, ensure, Result as EyreResult, WrapErr as _};
 use hyper::{
@@ -16,6 +16,9 @@ use prometheus::{
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use tracing::{error, info, instrument, trace};
 use url::{Host, Url};
+
+#[cfg(feature = "otlp")]
+use crate::trace_from_headers;
 
 // TODO: Spans, traceId and SpanKind trace_span!("request", "otel.kind" =
 // %SpanKind::Server, "http.url" = ..),
