@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.3] — 2022-08-10
+
+### Added
+
+*`otlp` output format that produces OpenTelemetry compatible Json logs.
+* `trace_from_headers` and `trace_to_headers` helper functions for trace-id headers.
+
+### Changed
+
+* Now uses OpenTelemetry compatible span and trace id.
+
 ## [0.3.2] — 2022-07-27
 
 ### Removed
@@ -122,7 +133,8 @@ Collected various common pieces of code for the v0.1.0 release.
 
 <!-- links to version -->
 
-[unreleased]: https://github.com/recmo/cli-batteries/compare/v0.3.2...HEAD
+[unreleased]: https://github.com/recmo/cli-batteries/compare/v0.3.3...HEAD
+[0.3.3]: https://github.com/recmo/cli-batteries/releases/tag/v0.3.3
 [0.3.2]: https://github.com/recmo/cli-batteries/releases/tag/v0.3.2
 [0.3.1]: https://github.com/recmo/cli-batteries/releases/tag/v0.3.1
 [0.3.0]: https://github.com/recmo/cli-batteries/releases/tag/v0.3.0
