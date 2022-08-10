@@ -94,15 +94,20 @@ where
 
         // Find Otel trace id by going up the span stack until we find a span
         // with a trace id.
-        trace_id = ctx.event_scope().and_then(|scope| {
-            scope.filter_map(|span| {
-                let extensions = span.extensions();
-                extensions
-                    .get::<OtelData>()
-                    .and_then(|otel| otel.builder.trace_id)
-                    .map(|id| u128::from_be_bytes(id.to_bytes()))
-            }).next()
-        }).or(trace_id);
+        trace_id = ctx
+            .event_scope()
+            .and_then(|scope| {
+                scope
+                    .filter_map(|span| {
+                        let extensions = span.extensions();
+                        extensions
+                            .get::<OtelData>()
+                            .and_then(|otel| otel.builder.trace_id)
+                            .map(|id| u128::from_be_bytes(id.to_bytes()))
+                    })
+                    .next()
+            })
+            .or(trace_id);
 
         // https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/span-general/#source-code-attributes
         // attributes.insert("code.function".into(), meta.target().into());
