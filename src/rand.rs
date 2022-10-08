@@ -6,10 +6,11 @@ use std::num::ParseIntError;
 use tracing::info;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Default, Hash, Parser)]
+#[group(skip)]
 pub struct Options {
     /// Random seed for deterministic runs.
     /// If not specified a new seed is generated from OS entropy.
-    #[clap(long, env, parse(try_from_str = parse_hex_u64))]
+    #[clap(long, env, value_parser = parse_hex_u64)]
     random_seed: Option<u64>,
 }
 

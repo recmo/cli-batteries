@@ -24,6 +24,7 @@ use crate::trace_from_headers;
 // %SpanKind::Server, "http.url" = ..),
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]
+#[group(skip)]
 pub struct Options {
     /// Prometheus scrape endpoint
     // See <https://github.com/prometheus/prometheus/wiki/Default-port-allocations>

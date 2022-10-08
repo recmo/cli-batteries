@@ -5,6 +5,7 @@ use tracing::Subscriber;
 use tracing_subscriber::{registry::LookupSpan, Layer};
 
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]
+#[group(skip)]
 pub struct Options {
     /// Start a tokio-console server on `http://127.0.0.1:6669/`.
     #[clap(long)]

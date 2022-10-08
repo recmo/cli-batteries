@@ -108,11 +108,13 @@ where
 
         // https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/span-general/#source-code-attributes
         // tracing-subscriber does. TODO (blocked): https://github.com/rust-lang/rust/issues/67939
-        // attributes.insert("thread.id".into(), thread::current().id().as_u64());
-        attributes.insert("thread.name".into(), match thread::current().name() {
-            Some(name) => name.into(),
-            None => format!("{:?}", thread::current().id()).into(),
-        });
+        attributes.insert(
+            "thread.name".into(),
+            thread::current().name().map_or_else(
+                || format!("{:?}", thread::current().id()).into(),
+                Into::into,
+            ),
+        );
 
         // Collect event fields
         let fields = serde_json::to_value(&event.field_map()).map_err(|_| Error)?;

@@ -6,6 +6,7 @@ use rayon::ThreadPoolBuilder;
 use tracing::info;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]
+#[group(skip)]
 pub struct Options {
     /// Number of compute threads to use. Defaults to number of cores.
     #[clap(long, env)]

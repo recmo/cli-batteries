@@ -24,7 +24,7 @@ pub use crate::{
     shutdown::{await_shutdown, is_shutting_down, shutdown},
     version::Version,
 };
-use clap::{Args, Parser};
+use clap::{Args, CommandFactory, FromArgMatches, Parser};
 use eyre::{Error as EyreError, Report, Result as EyreResult, WrapErr};
 use std::{future::Future, ptr::addr_of};
 use tokio::runtime;
@@ -54,7 +54,9 @@ macro_rules! default_from_clap {
     };
 }
 
+// TODO: Use the new command / arg distinction from clap.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Parser)]
+#[group(skip)]
 struct Options<O: Args> {
     #[clap(flatten)]
     tracing: trace::Options,
@@ -113,12 +115,12 @@ where
         })?;
 
     // Parse CLI and handle help and version (which will stop the application).
-    let matches = Options::<O>::clap()
+    let matches = Options::<O>::command()
         .name(version.pkg_name)
         .version(version.pkg_version)
         .long_version(version.long_version)
         .get_matches();
-    let options = Options::<O>::from_clap(&matches);
+    let options = Options::<O>::from_arg_matches(&matches)?;
 
     // Start allocator metering (if enabled)
     allocator::start_metering();

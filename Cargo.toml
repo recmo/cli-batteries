@@ -37,9 +37,9 @@ otlp = [
 [dependencies]
 ansi_term = "0.12.1"
 chrono = "0.4"
-clap = { version = "3.2", features = [ "derive", "env", "unicode", "wrap_help" ] }
+clap = { version = "4.0", features = [ "derive", "env", "unicode", "wrap_help" ] }
 color-eyre = { version = "0.6", features = [ "issue-url" ] }
-criterion = { version = "0.3", optional = true, features = [ "async_tokio" ] }
+criterion = { version = "0.4", optional = true, features = [ "async_tokio" ] }
 eyre = "0.6"
 futures = "0.3"
 hex = "0.4.3"
@@ -110,4 +110,3 @@ strip = true
 # while having neglible impact on incremental build times.
 [profile.dev.package."*"]
 opt-level = 3
-

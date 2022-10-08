@@ -24,6 +24,7 @@ use tracing_subscriber::{registry::LookupSpan, Layer};
 use url::Url;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]
+#[group(skip)]
 pub struct Options {
     /// Push telemetry traces to an OpenTelemetry node.
     /// Example: grpc://localhost:4317
@@ -39,7 +40,7 @@ pub struct Options {
     /// They can also be set via the `TRACE_RESOURCE_*` environment variables
     /// where `*` is the attribute name converted to SHOUTY_SNAKE_CASE:
     /// `TRACE_RESOURCE_SERVICE_NAMESPACE=prod`.
-    #[clap(long, parse(try_from_str = parse_key_val),)]
+    #[clap(long, value_parser = parse_key_val::<String, String>)]
     trace_resource: Vec<(String, String)>,
 }
 
