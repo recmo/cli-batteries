@@ -111,3 +111,12 @@ strip = true
 [profile.dev.package."*"]
 opt-level = 3
 
+# Use unpublished fix for the `opentelemetry-proto` crate build.
+# https://github.com/open-telemetry/opentelemetry-rust/issues/873
+# https://github.com/open-telemetry/opentelemetry-rust/pull/881
+[patch.crates-io]
+opentelemetry-proto = { git = 'https://github.com/open-telemetry/opentelemetry-rust', commit = 'be3165b' }
+opentelemetry-otlp = { git = 'https://github.com/open-telemetry/opentelemetry-rust', commit = 'be3165b' }
+opentelemetry = { git = 'https://github.com/open-telemetry/opentelemetry-rust', commit = 'be3165b' }
+opentelemetry-http = { git = 'https://github.com/open-telemetry/opentelemetry-rust', commit = 'be3165b' }
+opentelemetry-semantic-conventions = { git = 'https://github.com/open-telemetry/opentelemetry-rust', commit = 'be3165b' }
