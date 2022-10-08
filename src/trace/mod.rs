@@ -8,6 +8,7 @@ mod tokio_console;
 
 use self::{span_formatter::SpanFormatter, tiny_log_fmt::TinyLogFmt};
 use crate::{default_from_clap, Version};
+use ::clap::ArgAction;
 use clap::Parser;
 use core::str::FromStr;
 use eyre::{bail, eyre, Error as EyreError, Result as EyreResult, WrapErr as _};
@@ -99,10 +100,11 @@ impl FromStr for LogFormat {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]
+#[group(skip)]
 pub struct Options {
     /// Verbose mode (-v, -vv, -vvv, etc.)
-    #[clap(short, long, env, parse(from_occurrences))]
-    verbose: usize,
+    #[clap(short, long, env, action = ArgAction::Count)]
+    verbose: u8,
 
     /// Apply an env_filter compatible log filter
     #[clap(long, env, default_value_t)]
@@ -131,7 +133,7 @@ default_from_clap!(Options);
 impl Options {
     #[allow(clippy::borrow_as_ptr)] // ptr::addr_of! does not work here.
     pub fn init(&self, version: &Version, load_addr: usize) -> EyreResult<()> {
-        // Hack: ENV parsing for a `parse(from_occurrences)` argument
+        // Hack: ENV parsing for a `action = ArgAction::Count` argument
         // is not supported. So we have to do it manually.
         let verbose = env::var("VERBOSE")
             .ok()
@@ -241,7 +243,7 @@ pub mod test {
     #[test]
     fn test_parse_args() {
         let cmd = "arg0 -v --log-filter foo -vvv";
-        let options = Options::from_iter_safe(cmd.split(' ')).unwrap();
+        let options = Options::try_parse_from(cmd.split(' ')).unwrap();
         assert_eq!(options, Options {
             verbose: 4,
             log_filter: "foo".to_owned(),

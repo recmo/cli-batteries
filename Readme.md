@@ -35,6 +35,7 @@ use std::{path::PathBuf, io::Result};
 use tokio::fs::File;
 
 #[derive(Parser)]
+#[group(skip)]
 struct Options {
     /// File to read
     #[clap(long, env, default_value = "Readme.md")]

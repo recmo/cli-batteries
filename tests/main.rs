@@ -16,6 +16,7 @@ const MOCK_VERSION: Version = Version {
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]
+#[group(skip)]
 struct Options {
     /// File to read. Note that you can't actually supply it as flag since
     /// arguments are shared with the test runner and it will reject this flag.

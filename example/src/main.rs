@@ -4,11 +4,12 @@
 use clap::Parser;
 use cli_batteries::{trace_from_headers, trace_to_headers, version};
 use http::header::HeaderMap;
-use std::{collections::HashMap, io::Result, path::PathBuf};
+use std::{io::Result, path::PathBuf};
 use tokio::{fs::File, io::AsyncReadExt};
 use tracing::{event, info, info_span, instrument, Instrument, Level};
 
 #[derive(Clone, Debug, Parser)]
+#[group(skip)]
 struct Options {
     /// File to read
     #[clap(long, env, default_value = "Readme.md")]
