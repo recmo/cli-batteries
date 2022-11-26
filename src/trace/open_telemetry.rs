@@ -9,7 +9,7 @@ use opentelemetry::{
     runtime::Tokio,
     sdk::{
         propagation::TraceContextPropagator,
-        trace::{self, IdGenerator, Sampler, TracerProvider},
+        trace::{self, RandomIdGenerator, Sampler, TracerProvider},
         Resource,
     },
     trace::TracerProvider as _,
@@ -101,7 +101,7 @@ impl Options {
 
         let trace_config = trace::config()
             .with_sampler(Sampler::AlwaysOn)
-            .with_id_generator(IdGenerator::default())
+            .with_id_generator(RandomIdGenerator::default())
             .with_max_events_per_span(64)
             .with_max_attributes_per_span(16)
             .with_max_events_per_span(16)
