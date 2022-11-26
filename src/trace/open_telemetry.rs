@@ -9,7 +9,7 @@ use opentelemetry::{
     runtime::Tokio,
     sdk::{
         propagation::TraceContextPropagator,
-        trace::{self, IdGenerator, Sampler, TracerProvider},
+        trace::{self, RandomIdGenerator, Sampler, TracerProvider},
         Resource,
     },
     trace::TracerProvider as _,
@@ -66,7 +66,11 @@ impl Options {
     {
         // Propagate errors in the OpenTelemetry stack to the log.
         global::set_error_handler(|error| {
-            error!(%error, "Error in OpenTelemetry: {}", error);
+            error!("Error in OpenTelemetry: {:?}", eyre::Report::from(error));
+            // We have no means of handling the error, and a panic might be ignored
+            // in a background thread. We also can not ignore it, since I've seen
+            // opentelemetry silently hang the process. So we are left with abort.
+            std::process::abort();
         })?;
 
         // Set a format for propagating context. TraceContextPropagator implements
@@ -97,7 +101,7 @@ impl Options {
 
         let trace_config = trace::config()
             .with_sampler(Sampler::AlwaysOn)
-            .with_id_generator(IdGenerator::default())
+            .with_id_generator(RandomIdGenerator::default())
             .with_max_events_per_span(64)
             .with_max_attributes_per_span(16)
             .with_max_events_per_span(16)

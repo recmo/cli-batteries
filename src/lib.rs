@@ -128,6 +128,7 @@ where
     // TODO: Early logging to catch errors before we start the runtime.
 
     // Launch Tokio runtime
+    // TODO: https://docs.rs/tokio/latest/tokio/runtime/struct.Builder.html#method.unhandled_panic
     runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
