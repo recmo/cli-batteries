@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] — 2022-11-25
+
+## Changed
+
+* Made OTLP errors fatal.
+* Updated to OTLP 0.18.
+* Update dependencies.
+
 ## [0.4.0] — 2022-08-10
 
 ## Changed
@@ -140,7 +148,8 @@ Collected various common pieces of code for the v0.1.0 release.
 
 <!-- links to version -->
 
-[unreleased]: https://github.com/recmo/cli-batteries/compare/v0.4.0...HEAD
+[unreleased]: https://github.com/recmo/cli-batteries/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/recmo/cli-batteries/releases/tag/v0.4.1
 [0.4.0]: https://github.com/recmo/cli-batteries/releases/tag/v0.4.0
 [0.3.3]: https://github.com/recmo/cli-batteries/releases/tag/v0.3.3
 [0.3.2]: https://github.com/recmo/cli-batteries/releases/tag/v0.3.2
