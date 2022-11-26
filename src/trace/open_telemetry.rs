@@ -66,7 +66,11 @@ impl Options {
     {
         // Propagate errors in the OpenTelemetry stack to the log.
         global::set_error_handler(|error| {
-            error!(%error, "Error in OpenTelemetry: {}", error);
+            error!("Error in OpenTelemetry: {:?}", eyre::Report::from(error));
+            // We have no means of handling the error, and a panic might be ignored
+            // in a background thread. We also can not ignore it, since I've seen
+            // opentelemetry silently hang the process. So we are left with abort.
+            std::process::abort();
         })?;
 
         // Set a format for propagating context. TraceContextPropagator implements
