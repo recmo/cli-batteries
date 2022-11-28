@@ -32,7 +32,7 @@ jobs:
           override: true
           components: rustfmt, clippy
       - name: Cache build
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
         with:
           key: cache-v1
       - name: Check formatting
@@ -70,7 +70,7 @@ jobs:
           toolchain: stable
           override: true
       - name: Cache build
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
         with:
           key: cache-v1
       - name: Build and test main
@@ -94,7 +94,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
       - name: Cache build
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
         with:
           key: cache-v1
       # Cargo doc test is not included in `--all-targets` so we call it separately.
@@ -129,7 +129,7 @@ jobs:
           override: true
           components: llvm-tools-preview
       - name: Cache build
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
         with:
           key: cache-v1
       - name: Install cargo-binutils
