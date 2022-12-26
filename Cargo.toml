@@ -73,7 +73,7 @@ rand_chacha = { version = "0.3.1", optional = true }
 
 # Rayon feature
 rayon = { version = "1.5.3", optional = true }
-num_cpus = { version = "1.13.1", optional = true }
+num_cpus = { version = "1.15.0", optional = true }
 
 # Prometheus feature
 prometheus = { version = "0.13", features = [ "process" ], optional = true }
