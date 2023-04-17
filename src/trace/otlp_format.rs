@@ -53,7 +53,7 @@ where
             .or_else(|| ctx.lookup_current());
 
         // Event metadata
-        let timestamp = Utc::now().timestamp_nanos();
+        let timestamp = Utc::now().timestamp_millis();
         let mut trace_id = None;
         let mut span_id = span.as_ref().map(|s| s.id().into_u64());
         let (severity_text, severity_number) = match *meta.level() {
@@ -165,6 +165,7 @@ where
             if let Some(span_id) = span_id {
                 log_map.serialize_entry("SpanId", &format_args!("{:016x}", span_id))?;
             }
+            log_map.serialize_entry("severity", severity_text)?;
             log_map.serialize_entry("SeverityText", severity_text)?;
             log_map.serialize_entry("SeverityNumber", &severity_number)?;
             log_map.serialize_entry("Body", &body)?;
