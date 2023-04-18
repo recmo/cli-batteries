@@ -32,8 +32,7 @@ jobs:
           override: true
           components: rustfmt, clippy
       - name: Install protoc
-        run:
-          apt install -y protobuf-compiler
+        run: sudo apt install -y protobuf-compiler
       - name: Cache build
         uses: Swatinem/rust-cache@v2
         with:
@@ -73,8 +72,7 @@ jobs:
           toolchain: stable
           override: true
       - name: Install protoc
-        run:
-          apt install -y protobuf-compiler
+        run: sudo apt install -y protobuf-compiler
       - name: Cache build
         uses: Swatinem/rust-cache@v2
         with:
@@ -100,8 +98,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
       - name: Install protoc
-        run:
-          apt install -y protobuf-compiler
+        run: sudo apt install -y protobuf-compiler
       - name: Cache build
         uses: Swatinem/rust-cache@v2
         with:
@@ -138,8 +135,7 @@ jobs:
           override: true
           components: llvm-tools-preview
       - name: Install protoc
-        run:
-          apt install -y protobuf-compiler
+        run: sudo apt install -y protobuf-compiler
       - name: Cache build
         uses: Swatinem/rust-cache@v2
         with:
@@ -195,8 +191,7 @@ jobs:
           toolchain: nightly
           default: true
       - name: Install protoc
-        run:
-          apt install -y protobuf-compiler
+        run: sudo apt install -y protobuf-compiler
       - uses: actions-rs/audit-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
