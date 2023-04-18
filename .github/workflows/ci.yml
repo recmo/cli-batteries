@@ -31,8 +31,10 @@ jobs:
           toolchain: nightly
           override: true
           components: rustfmt, clippy
+      - name: Install protoc
+        run: sudo apt install -y protobuf-compiler
       - name: Cache build
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
         with:
           key: cache-v1
       - name: Check formatting
@@ -69,8 +71,10 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
+      - name: Install protoc
+        run: sudo apt install -y protobuf-compiler
       - name: Cache build
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
         with:
           key: cache-v1
       - name: Build and test main
@@ -93,8 +97,10 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
+      - name: Install protoc
+        run: sudo apt install -y protobuf-compiler
       - name: Cache build
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
         with:
           key: cache-v1
       # Cargo doc test is not included in `--all-targets` so we call it separately.
@@ -128,8 +134,10 @@ jobs:
           toolchain: nightly
           override: true
           components: llvm-tools-preview
+      - name: Install protoc
+        run: sudo apt install -y protobuf-compiler
       - name: Cache build
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
         with:
           key: cache-v1
       - name: Install cargo-binutils
@@ -182,6 +190,8 @@ jobs:
           profile: minimal
           toolchain: nightly
           default: true
+      - name: Install protoc
+        run: sudo apt install -y protobuf-compiler
       - uses: actions-rs/audit-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
