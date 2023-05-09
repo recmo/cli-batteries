@@ -1,8 +1,8 @@
 #![cfg(feature = "opentelemetry")]
-use std::{env, error::Error, str::FromStr, time::Duration};
+use std::{env, error::Error, str::FromStr};
 
 use clap::{Args, Parser};
-use eyre::{eyre, Result as EyreResult};
+use eyre::Result as EyreResult;
 use heck::ToSnakeCase;
 use http::header::HeaderMap;
 use opentelemetry::{
@@ -127,7 +127,7 @@ impl Options {
                 "http" => Protocol::HttpBinary,
                 "grpc" => Protocol::Grpc,
                 _ => {
-                    return Err(eyre!(
+                    return Err(eyre::eyre!(
                         "Invalid protocol: {} expecting 'http' or 'grpc'",
                         url.scheme()
                     ))
@@ -140,7 +140,7 @@ impl Options {
                 .tonic()
                 .with_endpoint(url.to_string())
                 .with_protocol(protocol)
-                .with_timeout(Duration::from_secs(3));
+                .with_timeout(std::time::Duration::from_secs(3));
 
             let tracer = new_pipeline()
                 .tracing()
