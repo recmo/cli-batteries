@@ -85,10 +85,6 @@ impl Options {
             error!("Error in OpenTelemetry: {:?}", eyre::Report::from(error));
         })?;
 
-        // Set a format for propagating context. TraceContextPropagator implements
-        // W3C Trace Context <https://www.w3.org/TR/trace-context/>
-        global::set_text_map_propagator(TraceContextPropagator::new());
-
         // Attributes for the trace generating entity.
         // See https://opentelemetry.io/docs/reference/specification/resource/semantic_conventions/
         let resource = {
@@ -123,6 +119,10 @@ impl Options {
         if let Some(url) = &self.trace.trace_otlp {
             use opentelemetry_otlp::{new_exporter, new_pipeline, Protocol, WithExportConfig};
 
+            // Set a format for propagating context. TraceContextPropagator implements
+            // W3C Trace Context <https://www.w3.org/TR/trace-context/>
+            global::set_text_map_propagator(TraceContextPropagator::new());
+
             let protocol = match url.scheme() {
                 "http" => Protocol::HttpBinary,
                 "grpc" => Protocol::Grpc,
@@ -155,7 +155,9 @@ impl Options {
 
         #[cfg(feature = "datadog")]
         if let Some(dd_url) = &self.trace.trace_datadog {
-            use opentelemetry_datadog::new_pipeline;
+            use opentelemetry_datadog::{new_pipeline, DatadogPropagator};
+
+            global::set_text_map_propagator(DatadogPropagator::default());
 
             let tracer = new_pipeline()
                 .with_trace_config(trace_config)

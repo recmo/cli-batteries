@@ -86,7 +86,7 @@ impl LogFormat {
                     .map_event_format(SpanFormatter::new),
             ),
             #[cfg(feature = "datadog")]
-            Self::Datadog => Box::new(layer.json().map_event_format(SpanFormatter::new)),
+            Self::Datadog => Box::new(layer.json()),
         }
     }
 }
