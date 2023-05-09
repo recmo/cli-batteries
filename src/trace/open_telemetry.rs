@@ -1,6 +1,7 @@
-#![cfg(feature = "otlp")]
-use crate::{default_from_clap, Version};
-use clap::Parser;
+#![cfg(feature = "opentelemetry")]
+use std::{env, error::Error, str::FromStr, time::Duration};
+
+use clap::{Args, Parser};
 use eyre::{eyre, Result as EyreResult};
 use heck::ToSnakeCase;
 use http::header::HeaderMap;
@@ -17,19 +18,18 @@ use opentelemetry::{
 };
 use opentelemetry_http::{HeaderExtractor, HeaderInjector};
 use opentelemetry_semantic_conventions::resource;
-use std::{env, error::Error, str::FromStr, time::Duration};
 use tracing::{error, Span, Subscriber};
 use tracing_opentelemetry::{OpenTelemetryLayer, OpenTelemetrySpanExt};
 use tracing_subscriber::{registry::LookupSpan, Layer};
 use url::Url;
 
+use crate::{default_from_clap, Version};
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]
 #[group(skip)]
 pub struct Options {
-    /// Push telemetry traces to an OpenTelemetry node.
-    /// Example: grpc://localhost:4317
-    #[clap(long, env)]
-    trace_otlp: Option<Url>,
+    #[command(flatten)]
+    trace: TraceOptions,
 
     /// Attributes to set on the trace submitting entity. By default
     /// `service.name` and `service.version` are set.
@@ -42,6 +42,22 @@ pub struct Options {
     /// `TRACE_RESOURCE_SERVICE_NAMESPACE=prod`.
     #[clap(long, value_parser = parse_key_val::<String, String>)]
     trace_resource: Vec<(String, String)>,
+}
+
+#[derive(Clone, Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Args)]
+#[group(required = false, multiple = false)]
+struct TraceOptions {
+    /// Push telemetry traces to an OpenTelemetry node.
+    /// Example: grpc://localhost:4317
+    #[cfg(feature = "otlp")]
+    #[clap(long, env)]
+    trace_otlp: Option<Url>,
+
+    /// Push telemetry traces to a DataDog Agent.
+    /// Example: grpc://localhost:8126
+    #[cfg(feature = "datadog")]
+    #[clap(long, env)]
+    trace_datadog: Option<Url>,
 }
 
 default_from_clap!(Options);
@@ -103,7 +119,8 @@ impl Options {
             .with_max_events_per_span(16)
             .with_resource(resource);
 
-        if let Some(url) = &self.trace_otlp {
+        #[cfg(feature = "otlp")]
+        if let Some(url) = &self.trace.trace_otlp {
             use opentelemetry_otlp::{new_exporter, new_pipeline, Protocol, WithExportConfig};
 
             let protocol = match url.scheme() {
@@ -131,22 +148,38 @@ impl Options {
                 .with_trace_config(trace_config)
                 .install_batch(Tokio)?;
 
-            Ok(OpenTelemetryLayer::new(tracer)
+            return Ok(OpenTelemetryLayer::new(tracer)
                 .with_tracked_inactivity(true)
-                .boxed())
-        } else {
-            // Create a non-exportin otel layer that produces span and trace ids for logs.
-            let trace_provider = TracerProvider::builder().with_config(trace_config).build();
-            let tracer = trace_provider.versioned_tracer(
-                env!("CARGO_PKG_NAME"),
-                Some(env!("CARGO_PKG_VERSION")),
-                Some(env!("CARGO_PKG_REPOSITORY")),
-            );
-            let _old_provider = global::set_tracer_provider(trace_provider);
-            Ok(OpenTelemetryLayer::new(tracer)
-                .with_tracked_inactivity(true)
-                .boxed())
+                .boxed());
         }
+
+        #[cfg(feature = "datadog")]
+        if let Some(dd_url) = &self.trace.trace_datadog {
+            use opentelemetry_datadog::new_pipeline;
+
+            let tracer = new_pipeline()
+                .with_trace_config(trace_config)
+                .with_agent_endpoint(dd_url.as_str())
+                .install_batch(Tokio)?;
+
+            return Ok(OpenTelemetryLayer::new(tracer)
+                .with_tracked_inactivity(true)
+                .boxed());
+        }
+
+        // Create a non-exporting opentelemetry layer that produces span and trace ids
+        // for logs.
+        let trace_provider = TracerProvider::builder().with_config(trace_config).build();
+        let tracer = trace_provider.versioned_tracer(
+            env!("CARGO_PKG_NAME"),
+            Some(env!("CARGO_PKG_VERSION")),
+            Some(env!("CARGO_PKG_REPOSITORY")),
+        );
+
+        let _old_provider = global::set_tracer_provider(trace_provider);
+        Ok(OpenTelemetryLayer::new(tracer)
+            .with_tracked_inactivity(true)
+            .boxed())
     }
 }
 
