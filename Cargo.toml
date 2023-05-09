@@ -12,7 +12,7 @@ readme = "Readme.md"
 license = "MIT"
 
 [features]
-default = ["datadog"]
+default = []
 signals = [ "tokio/signal" ]
 mock-shutdown = []
 metered-allocator = [ "prometheus" ]
