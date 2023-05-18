@@ -2,10 +2,12 @@
 
 mod open_telemetry;
 mod otlp_format;
-mod span_and_trace_extractor;
 mod span_formatter;
 mod tiny_log_fmt;
 mod tokio_console;
+
+#[cfg(feature = "opentelemetry")]
+mod span_and_trace_extractor;
 
 use core::str::FromStr;
 use std::{
@@ -34,10 +36,7 @@ use users::{get_current_gid, get_current_uid};
 #[cfg(feature = "opentelemetry")]
 #[allow(clippy::useless_attribute, clippy::module_name_repetitions)]
 pub use self::open_telemetry::{trace_from_headers, trace_to_headers};
-use self::{
-    span_and_trace_extractor::EventEnrichmentCenter, span_formatter::SpanFormatter,
-    tiny_log_fmt::TinyLogFmt,
-};
+use self::{span_formatter::SpanFormatter, tiny_log_fmt::TinyLogFmt};
 use crate::{default_from_clap, Version};
 
 static FLAME_FLUSH_GUARD: OnceCell<Option<FlushGuard<BufWriter<File>>>> = OnceCell::new();
@@ -85,7 +84,11 @@ impl LogFormat {
                     .map_event_format(SpanFormatter::new),
             ),
             #[cfg(feature = "datadog")]
-            Self::Datadog => Box::new(layer.json().map_event_format(EventEnrichmentCenter::new)),
+            Self::Datadog => Box::new(
+                layer
+                    .json()
+                    .map_event_format(span_and_trace_extractor::EventEnrichmentCenter::new),
+            ),
         }
     }
 }
