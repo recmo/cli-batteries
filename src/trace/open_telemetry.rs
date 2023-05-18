@@ -9,7 +9,6 @@ use opentelemetry::{
     global::{self, get_text_map_propagator},
     runtime::Tokio,
     sdk::{
-        propagation::TraceContextPropagator,
         trace::{self, RandomIdGenerator, Sampler, TracerProvider},
         Resource,
     },
@@ -117,11 +116,12 @@ impl Options {
 
         #[cfg(feature = "otlp")]
         if let Some(url) = &self.trace.trace_otlp {
+            use opentelemetry::sdk::propagation;
             use opentelemetry_otlp::{new_exporter, new_pipeline, Protocol, WithExportConfig};
 
             // Set a format for propagating context. TraceContextPropagator implements
             // W3C Trace Context <https://www.w3.org/TR/trace-context/>
-            global::set_text_map_propagator(TraceContextPropagator::new());
+            global::set_text_map_propagator(propagation::TraceContextPropagator::new());
 
             let protocol = match url.scheme() {
                 "http" => Protocol::HttpBinary,

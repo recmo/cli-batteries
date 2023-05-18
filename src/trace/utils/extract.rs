@@ -1,3 +1,4 @@
+use opentelemetry::trace::TraceContextExt;
 use tracing::Subscriber;
 use tracing_opentelemetry::OtelData;
 use tracing_subscriber::{
@@ -12,17 +13,14 @@ where
     S: Subscriber + for<'lookup> LookupSpan<'lookup>,
     N: for<'writer> FormatFields<'writer> + 'static,
 {
-    let mut scope = ctx.event_scope()?;
+    let span_ref = span_from_ctx(ctx)?;
 
-    scope.find_map(|span| {
-        let extensions = span.extensions();
+    let extensions = span_ref.extensions();
 
-        let otel_data = extensions.get::<OtelData>()?;
+    let data = extensions.get::<OtelData>()?;
+    let id = data.parent_cx.span().span_context().trace_id();
 
-        let id = otel_data.builder.trace_id?;
-
-        Some(u128::from_be_bytes(id.to_bytes()))
-    })
+    Some(u128::from_be_bytes(id.to_bytes()))
 }
 
 /// Finds Otel span id
@@ -37,34 +35,12 @@ where
     S: Subscriber + for<'lookup> LookupSpan<'lookup>,
     N: for<'writer> FormatFields<'writer> + 'static,
 {
-    let otel_span_id = opentelemetry_span_id_inner(ctx);
-    let tracing_span_id = tracing_span_id(ctx);
+    let span_ref = span_from_ctx(ctx)?;
 
-    otel_span_id.or(tracing_span_id)
-}
+    let extensions = span_ref.extensions();
 
-fn tracing_span_id<S, N>(ctx: &FmtContext<'_, S, N>) -> Option<u64>
-where
-    S: Subscriber + for<'lookup> LookupSpan<'lookup>,
-    N: for<'writer> FormatFields<'writer> + 'static,
-{
-    let span = span_from_ctx(ctx)?;
-
-    Some(span.id().into_u64())
-}
-
-fn opentelemetry_span_id_inner<S, N>(ctx: &FmtContext<'_, S, N>) -> Option<u64>
-where
-    S: Subscriber + for<'lookup> LookupSpan<'lookup>,
-    N: for<'writer> FormatFields<'writer> + 'static,
-{
-    let span = span_from_ctx(ctx)?;
-
-    let extensions = span.extensions();
-
-    let otel = extensions.get::<OtelData>()?;
-
-    let id = otel.builder.span_id?;
+    let data = extensions.get::<OtelData>()?;
+    let id = data.parent_cx.span().span_context().span_id();
 
     Some(u64::from_be_bytes(id.to_bytes()))
 }
@@ -74,7 +50,7 @@ where
     S: Subscriber + for<'lookup> LookupSpan<'lookup>,
     N: for<'writer> FormatFields<'writer> + 'static,
 {
-    let span = ctx.parent_span().or_else(|| ctx.lookup_current());
+    let span = ctx.lookup_current().or_else(|| ctx.parent_span());
 
     span
 }
