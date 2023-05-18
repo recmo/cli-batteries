@@ -40,10 +40,12 @@ where
             serializer.serialize_entry("target", meta.target())?;
 
             if let Some(trace_id) = trace_id {
+                let trace_id = format!("{}", trace_id);
                 serializer.serialize_entry("dd.trace_id", &trace_id)?;
             }
 
             if let Some(span_id) = span_id {
+                let span_id = format!("{}", span_id);
                 serializer.serialize_entry("dd.span_id", &span_id)?;
             }
 
