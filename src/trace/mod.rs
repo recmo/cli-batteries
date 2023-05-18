@@ -2,6 +2,7 @@
 
 mod open_telemetry;
 mod otlp_format;
+mod span_and_trace_extractor;
 mod span_formatter;
 mod tiny_log_fmt;
 mod tokio_console;
@@ -24,10 +25,7 @@ use tracing_flame::{FlameLayer, FlushGuard};
 use tracing_log::{InterestCacheConfig, LogTracer};
 use tracing_subscriber::{
     filter::Targets,
-    fmt::{
-        format::FmtSpan,
-        {self},
-    },
+    fmt::{self},
     layer::SubscriberExt,
     Layer, Registry,
 };
@@ -36,7 +34,10 @@ use users::{get_current_gid, get_current_uid};
 #[cfg(feature = "opentelemetry")]
 #[allow(clippy::useless_attribute, clippy::module_name_repetitions)]
 pub use self::open_telemetry::{trace_from_headers, trace_to_headers};
-use self::{span_formatter::SpanFormatter, tiny_log_fmt::TinyLogFmt};
+use self::{
+    span_and_trace_extractor::EventEnrichmentCenter, span_formatter::SpanFormatter,
+    tiny_log_fmt::TinyLogFmt,
+};
 use crate::{default_from_clap, Version};
 
 static FLAME_FLUSH_GUARD: OnceCell<Option<FlushGuard<BufWriter<File>>>> = OnceCell::new();
@@ -58,9 +59,7 @@ impl LogFormat {
     where
         S: Subscriber + for<'a> tracing_subscriber::registry::LookupSpan<'a> + Send + Sync,
     {
-        let layer = fmt::Layer::new()
-            .with_writer(std::io::stderr)
-            .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE);
+        let layer = fmt::Layer::new().with_writer(std::io::stderr);
 
         match self {
             Self::Tiny => Box::new(
@@ -86,7 +85,7 @@ impl LogFormat {
                     .map_event_format(SpanFormatter::new),
             ),
             #[cfg(feature = "datadog")]
-            Self::Datadog => Box::new(layer.json()),
+            Self::Datadog => Box::new(layer.json().map_event_format(EventEnrichmentCenter::new)),
         }
     }
 }
