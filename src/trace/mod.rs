@@ -1,13 +1,11 @@
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
 
+mod formats;
 mod open_telemetry;
-mod otlp_format;
 mod span_formatter;
 mod tiny_log_fmt;
 mod tokio_console;
-
-#[cfg(feature = "opentelemetry")]
-mod span_and_trace_extractor;
+mod utils;
 
 use core::str::FromStr;
 use std::{
@@ -19,8 +17,6 @@ use ::clap::ArgAction;
 use clap::Parser;
 use eyre::{bail, eyre, Error as EyreError, Result as EyreResult, WrapErr as _};
 use once_cell::sync::OnceCell;
-#[cfg(feature = "otlp")]
-use otlp_format::OtlpFormatter;
 use tracing::{info, Level, Subscriber};
 use tracing_error::ErrorLayer;
 use tracing_flame::{FlameLayer, FlushGuard};
@@ -33,6 +29,7 @@ use tracing_subscriber::{
 };
 use users::{get_current_gid, get_current_uid};
 
+// Re-export
 #[cfg(feature = "opentelemetry")]
 #[allow(clippy::useless_attribute, clippy::module_name_repetitions)]
 pub use self::open_telemetry::{trace_from_headers, trace_to_headers};
@@ -80,15 +77,11 @@ impl LogFormat {
             Self::Otlp => Box::new(
                 layer
                     .json()
-                    .event_format(OtlpFormatter)
+                    .event_format(formats::otlp::OtlpFormatter)
                     .map_event_format(SpanFormatter::new),
             ),
             #[cfg(feature = "datadog")]
-            Self::Datadog => Box::new(
-                layer
-                    .json()
-                    .map_event_format(span_and_trace_extractor::EventEnrichmentCenter::new),
-            ),
+            Self::Datadog => Box::new(layer.json().event_format(formats::datadog::DataDogFormat)),
         }
     }
 }
