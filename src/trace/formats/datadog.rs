@@ -40,7 +40,9 @@ where
             serializer.serialize_entry("target", meta.target())?;
 
             if let Some(trace_id) = trace_id {
-                let trace_id = format!("{}", trace_id);
+                // The opentelemetry-datadog crate truncates the 128-bit trace-id
+                // into a u64 before formatting it.
+                let trace_id = format!("{}", trace_id as u64);
                 serializer.serialize_entry("dd.trace_id", &trace_id)?;
             }
 
