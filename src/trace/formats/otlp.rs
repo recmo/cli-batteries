@@ -1,18 +1,19 @@
-#![cfg(feature = "otlp")]
+use std::{
+    fmt::{Error, Result},
+    thread,
+};
+
 use chrono::Utc;
 use serde::{ser::SerializeMap, Serializer};
 use serde_json::Value;
-use std::{
-    fmt::{Error, Result},
-    io, thread,
-};
 use tracing::{Event, Level, Subscriber};
-use tracing_opentelemetry::OtelData;
 use tracing_serde::fields::AsMap;
 use tracing_subscriber::{
     fmt::{format::Writer, FmtContext, FormatEvent, FormatFields, FormattedFields},
     registry::LookupSpan,
 };
+
+use crate::trace::utils::{extract, write_adapter::WriteAdaptor};
 
 // Implements <https://opentelemetry.io/docs/reference/specification/logs/data-model/>
 // <https://opentelemetry.io/docs/reference/specification/logs/semantic_conventions/>
@@ -47,15 +48,9 @@ where
         S: Subscriber + for<'a> LookupSpan<'a>,
     {
         let meta = event.metadata();
-        let span = event
-            .parent()
-            .and_then(|id| ctx.span(id))
-            .or_else(|| ctx.lookup_current());
 
         // Event metadata
         let timestamp = Utc::now().timestamp_millis();
-        let mut trace_id = None;
-        let mut span_id = span.as_ref().map(|s| s.id().into_u64());
         let (severity_text, severity_number) = match *meta.level() {
             Level::TRACE => ("TRACE", 1),
             Level::DEBUG => ("DEBUG", 5),
@@ -66,34 +61,8 @@ where
         let mut body = String::new();
         let mut attributes = serde_json::Map::<String, Value>::new();
 
-        // Find Otel span id
-        // BUG: The otel object is not available for span end events. This is
-        // because the Otel layer is higher in the stack and removes the
-        // extension before we get here.
-        span_id = span
-            .and_then(|span| {
-                let extensions = span.extensions();
-                extensions
-                    .get::<OtelData>()
-                    .and_then(|otel| otel.builder.span_id)
-                    .map(|id| u64::from_be_bytes(id.to_bytes()))
-            })
-            .or(span_id); // Fallback to tracing span id
-
-        // Find Otel trace id by going up the span stack until we find a span
-        // with a trace id.
-        trace_id = ctx
-            .event_scope()
-            .and_then(|mut scope| {
-                scope.find_map(|span| {
-                    let extensions = span.extensions();
-                    extensions
-                        .get::<OtelData>()
-                        .and_then(|otel| otel.builder.trace_id)
-                        .map(|id| u128::from_be_bytes(id.to_bytes()))
-                })
-            })
-            .or(trace_id);
+        let span_id = extract::opentelemetry_span_id(ctx);
+        let trace_id = extract::opentelemetry_trace_id(ctx);
 
         // https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/span-general/#source-code-attributes
         // attributes.insert("code.function".into(), meta.target().into());
@@ -175,32 +144,5 @@ where
         .map_err(|_| std::fmt::Error)?;
 
         writeln!(writer)
-    }
-}
-
-struct WriteAdaptor<'a> {
-    fmt_write: &'a mut dyn std::fmt::Write,
-}
-
-impl<'a> WriteAdaptor<'a> {
-    pub fn new(fmt_write: &'a mut dyn std::fmt::Write) -> Self {
-        Self { fmt_write }
-    }
-}
-
-impl<'a> io::Write for WriteAdaptor<'a> {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        let s =
-            std::str::from_utf8(buf).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-
-        self.fmt_write
-            .write_str(s)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-
-        Ok(s.as_bytes().len())
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        Ok(())
     }
 }

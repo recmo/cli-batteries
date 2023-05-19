@@ -1,40 +1,40 @@
 #![warn(clippy::all, clippy::pedantic, clippy::cargo, clippy::nursery)]
 
+mod formats;
 mod open_telemetry;
-mod otlp_format;
 mod span_formatter;
 mod tiny_log_fmt;
 mod tokio_console;
+mod utils;
 
-use self::{span_formatter::SpanFormatter, tiny_log_fmt::TinyLogFmt};
-use crate::{default_from_clap, Version};
-use ::clap::ArgAction;
-use clap::Parser;
 use core::str::FromStr;
-use eyre::{bail, eyre, Error as EyreError, Result as EyreResult, WrapErr as _};
-use once_cell::sync::OnceCell;
 use std::{
     cmp::max, env, fs::File, io::BufWriter, path::PathBuf, process::id as pid,
     thread::available_parallelism,
 };
+
+use ::clap::ArgAction;
+use clap::Parser;
+use eyre::{bail, eyre, Error as EyreError, Result as EyreResult, WrapErr as _};
+use once_cell::sync::OnceCell;
 use tracing::{info, Level, Subscriber};
 use tracing_error::ErrorLayer;
 use tracing_flame::{FlameLayer, FlushGuard};
 use tracing_log::{InterestCacheConfig, LogTracer};
 use tracing_subscriber::{
     filter::Targets,
-    fmt::{self, format::FmtSpan},
+    fmt::{self},
     layer::SubscriberExt,
     Layer, Registry,
 };
 use users::{get_current_gid, get_current_uid};
 
-#[cfg(feature = "otlp")]
-use otlp_format::OtlpFormatter;
-
-#[cfg(feature = "otlp")]
+// Re-export
+#[cfg(feature = "opentelemetry")]
 #[allow(clippy::useless_attribute, clippy::module_name_repetitions)]
 pub use self::open_telemetry::{trace_from_headers, trace_to_headers};
+use self::{span_formatter::SpanFormatter, tiny_log_fmt::TinyLogFmt};
+use crate::{default_from_clap, Version};
 
 static FLAME_FLUSH_GUARD: OnceCell<Option<FlushGuard<BufWriter<File>>>> = OnceCell::new();
 
@@ -46,6 +46,8 @@ enum LogFormat {
     Json,
     #[cfg(feature = "otlp")]
     Otlp,
+    #[cfg(feature = "datadog")]
+    Datadog,
 }
 
 impl LogFormat {
@@ -53,9 +55,8 @@ impl LogFormat {
     where
         S: Subscriber + for<'a> tracing_subscriber::registry::LookupSpan<'a> + Send + Sync,
     {
-        let layer = fmt::Layer::new()
-            .with_writer(std::io::stderr)
-            .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE);
+        let layer = fmt::Layer::new().with_writer(std::io::stderr);
+
         match self {
             Self::Tiny => Box::new(
                 layer
@@ -76,9 +77,11 @@ impl LogFormat {
             Self::Otlp => Box::new(
                 layer
                     .json()
-                    .event_format(OtlpFormatter)
+                    .event_format(formats::otlp::OtlpFormatter)
                     .map_event_format(SpanFormatter::new),
             ),
+            #[cfg(feature = "datadog")]
+            Self::Datadog => Box::new(layer.json().event_format(formats::datadog::DataDogFormat)),
         }
     }
 }
@@ -94,6 +97,8 @@ impl FromStr for LogFormat {
             "json" => Self::Json,
             #[cfg(feature = "otlp")]
             "otlp" => Self::Otlp,
+            #[cfg(feature = "datadog")]
+            "datadog" => Self::Datadog,
             _ => bail!("Invalid log format: {}", s),
         })
     }
@@ -123,7 +128,7 @@ pub struct Options {
     #[clap(flatten)]
     pub tokio_console: tokio_console::Options,
 
-    #[cfg(feature = "otlp")]
+    #[cfg(feature = "opentelemetry")]
     #[clap(flatten)]
     open_telemetry: open_telemetry::Options,
 }
@@ -167,7 +172,7 @@ impl Options {
         let subscriber = Registry::default();
 
         // OpenTelemetry layer
-        #[cfg(feature = "otlp")]
+        #[cfg(feature = "opentelemetry")]
         let subscriber = subscriber.with(
             self.open_telemetry
                 .to_layer(version)?
@@ -230,7 +235,7 @@ pub fn shutdown() -> EyreResult<()> {
         flush_guard.flush()?;
     }
 
-    #[cfg(feature = "otlp")]
+    #[cfg(feature = "opentelemetry")]
     open_telemetry::shutdown();
 
     Ok(())
@@ -251,7 +256,7 @@ pub mod test {
             trace_flame: None,
             #[cfg(feature = "tokio-console")]
             tokio_console: tokio_console::Options::default(),
-            #[cfg(feature = "otlp")]
+            #[cfg(feature = "opentelemetry")]
             open_telemetry: open_telemetry::Options::default(),
         });
     }

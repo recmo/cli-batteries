@@ -36,7 +36,7 @@ pub use crate::shutdown::reset_shutdown;
 #[cfg(feature = "metered-allocator")]
 use crate::metered_allocator::MeteredAllocator;
 
-#[cfg(feature = "otlp")]
+#[cfg(feature = "opentelemetry")]
 pub use crate::trace::{trace_from_headers, trace_to_headers};
 
 /// Implement [`Default`] for a type that implements [`Parser`] and has
@@ -120,6 +120,7 @@ where
         .version(version.pkg_version)
         .long_version(version.long_version)
         .get_matches();
+
     let options = Options::<O>::from_arg_matches(&matches)?;
 
     // Start allocator metering (if enabled)
