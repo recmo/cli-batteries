@@ -86,15 +86,12 @@ num_cpus = { version = "1.13.1", optional = true }
 prometheus = { version = "0.13", features = [ "process" ], optional = true }
 hyper = { version = "^0.14.17", features = [ "server", "tcp", "http1", "http2" ], optional = true }
 
-# OpenTelemetry
+# Serde
 serde = { version = "1.0", optional = true }
 serde_json = { version = "1.0", optional = true }
 
-# A fork by the author of the following PRs which update tracing-opentelemetry to support 0.19
-# https://github.com/tokio-rs/tracing-opentelemetry/pull/12
-# https://github.com/tokio-rs/tracing-opentelemetry/pull/9
-# Without 0.19 the opentelemetry-datadog crate is broken (missing Datadog-Meta-Tracer-Version header, but could be more issues)
-tracing-opentelemetry = { git = "https://github.com/jaysonsantos/tracing-opentelemetry", rev="76b0a0fe45fd53c352e8bfdcdfad775aed727e4c", optional = true }
+# OpenTelemetry
+tracing-opentelemetry = { version = "0.19", optional = true }
 opentelemetry = { version = "0.19", features = ["rt-tokio"], optional = true }
 opentelemetry-semantic-conventions = { version = "0.11", optional = true }
 opentelemetry-http = { version = "0.8", optional = true }
